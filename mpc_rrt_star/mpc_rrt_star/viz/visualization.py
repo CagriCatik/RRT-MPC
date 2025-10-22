@@ -1,0 +1,91 @@
+"""Visualization helpers for planning and control results."""
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Iterable, Optional, Sequence
+
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+
+from ..common.types import FloatArray, Path
+from ..planning.plan_result import PlanResult, RRTStarNode
+from .vehicle_draw import VehicleParams, draw_vehicle
+
+
+def configure_backend(backend: str) -> None:
+    matplotlib.use(backend, force=True)
+
+
+def plot_rrt_star(
+    occupancy: np.ndarray,
+    start: tuple[float, float],
+    goal: tuple[float, float],
+    result: PlanResult,
+    *,
+    show_tree: bool = True,
+    save_path: Optional[str | Path] = None,
+) -> None:
+    plt.figure(figsize=(7, 7))
+    plt.imshow(occupancy, cmap="gray", origin="lower")
+    plt.plot(start[0], start[1], "bo", label="Start")
+    plt.plot(goal[0], goal[1], "ro", label="Goal")
+
+    if show_tree:
+        for node in result.nodes:
+            if node.parent is None:
+                continue
+            parent = result.nodes[node.parent]
+            plt.plot([node.x, parent.x], [node.y, parent.y], "g-", linewidth=0.3)
+
+    if result.success:
+        px, py = zip(*result.path)
+        plt.plot(px, py, "r-", linewidth=2, label="Path")
+
+    plt.legend(loc="upper right")
+    plt.title("RRT* Path Planning")
+    if save_path is not None:
+        plt.savefig(save_path, bbox_inches="tight", dpi=200)
+    plt.show()
+
+
+def plot_prediction(
+    occupancy: np.ndarray,
+    path: Path,
+    predicted: Optional[FloatArray],
+    state: FloatArray,
+    step_idx: int,
+    pause_s: float,
+) -> None:
+    if predicted is None:
+        return
+    plt.clf()
+    plt.imshow(occupancy, cmap="gray", origin="lower")
+    pts = np.asarray(path)
+    plt.plot(pts[:, 0], pts[:, 1], "r-", linewidth=2, label="Planned Path")
+    plt.plot(state[0], state[1], "bo", markersize=5, label="Vehicle")
+    plt.plot(predicted[0, :], predicted[1, :], "go--", linewidth=1.5, markersize=4, label="Predicted")
+    plt.xlim(0, occupancy.shape[1])
+    plt.ylim(0, occupancy.shape[0])
+    plt.title(f"MPC Step {step_idx}")
+    plt.legend(loc="upper right")
+    plt.pause(pause_s)
+
+
+def animate_vehicle_states(
+    occupancy: np.ndarray,
+    states: Sequence[FloatArray],
+    *,
+    color: str = "blue",
+    delay: float = 0.03,
+) -> None:
+    params = VehicleParams()
+    plt.figure(figsize=(7, 7))
+    for state in states:
+        plt.clf()
+        plt.imshow(occupancy, cmap="gray", origin="lower")
+        draw_vehicle(state[0], state[1], state[2], 0.0, params, color=color)
+        plt.xlim(0, occupancy.shape[1])
+        plt.ylim(0, occupancy.shape[0])
+        plt.pause(delay)
+    plt.show()
