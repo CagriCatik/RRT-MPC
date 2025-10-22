@@ -1,0 +1,110 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+.env
+.venv
+env/
+venv/
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+.eggs/
+pip-wheel-metadata/
+*.egg
+MANIFEST
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Logs
+*.log
+logs/
+debug.log
+*.pid
+*.seed
+*.pid.lock
+
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+desktop.ini
+
+# IDEs and editors
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+*.swp
+*.swo
+
+# Tests and coverage
+.coverage
+.tox/
+.nox/
+*.cover
+coverage.xml
+htmlcov/
+*.py,cover
+
+# Compiled files
+*.so
+*.dll
+*.o
+*.a
+*.lib
+
+# CMake and build
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.cmake
+*.out
+*.exe
+
+# ROS and robotics (common)
+build/
+devel/
+install/
+log/
+.bazel/
+.colcon/
+ros_ws/install/
+ros_ws/build/
+ros_ws/log/
+.launch
+*.bag
+*.bag.active
+*.bag.tmp
+*.launch.user
+
+# Environment and secrets
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.secret
+*.key
+*.pem
+*.crt
+
+# Misc
+*.bak
+*.tmp
+*.swp
+*.swo
+*.old
+*.orig
+*.rej
