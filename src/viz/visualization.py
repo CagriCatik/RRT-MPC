@@ -125,12 +125,14 @@ def plot_rrt_star(
         highlight[np.asarray(inflation_mask, dtype=bool)] = 1.0
         cmap = mcolors.ListedColormap([(0.0, 0.0, 0.0, 0.0), "#ff7f0e"])
         inflated_image = axis.imshow(
-            np.ma.masked_where(highlight == 0, highlight),
+            highlight,
             cmap=cmap,
             origin="lower",
             alpha=0.75,
             interpolation="nearest",
             zorder=3,
+            vmin=0.0,
+            vmax=1.0,
         )
         inflated_image.set_label("Inflated Obstacle")
         legend_handles.append(
