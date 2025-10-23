@@ -141,6 +141,24 @@ pytest
 The tests validate stage interfaces, pipeline orchestration, and configuration
 loading. Continuous integration can extend this with linting and static analysis.
 
+## Roadmap & Enhancement Ideas
+
+- **Closed-loop replanning** – integrate a lightweight trigger that re-runs the
+  planner whenever the MPC deviates beyond a tolerance, enabling operation in
+  slowly changing environments.
+- **Dynamic obstacle modelling** – extend the map stage to ingest time-varying
+  occupancy (e.g. from ROS2 topics) and feed predictions into the MPC cost
+  function for proactive collision avoidance.
+- **Controller modularity** – expose a plug-in interface for alternative
+  trackers (LQR, learning-based) while reusing the existing `PipelineResult`
+  contract for logging and evaluation.
+- **Scenario regression suite** – add parametrised tests and benchmark maps that
+  validate planner success rates, solve times, and control smoothness across a
+  curated set of environments.
+- **Deployment hooks** – package the pipeline behind a REST/ROS2 boundary with
+  structured logging and telemetry export so experiments can scale to multi-robot
+  fleets.
+
 ## Further reading
 
 - [`docs/developer_guide.md`](docs/developer_guide.md) – conventions, architecture

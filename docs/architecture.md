@@ -107,6 +107,73 @@ flowchart LR
 This layered structure keeps responsibilities narrow, simplifies testing of each
 stage, and provides a clear seam for future planners or controllers.
 
+## Runtime Sequence
+
+1. `PipelineOrchestrator.run()` configures the Matplotlib backend, instantiates
+   each stage with the loaded `PipelineConfig`, and measures wall-clock timings
+   for observability.
+2. `MapStage.build()` produces immutable `MapArtifacts` that bundle the raw
+   occupancy grid, start/goal, rectangular obstacle approximations, and the
+   workspace extents used by planners operating in continuous space.
+3. `PlanningStage.plan()` selects the configured algorithm and returns a
+   `PlanningArtifacts` wrapper. The planner output is smoothed in-place so the
+   downstream controller receives curvature-aware waypoints without additional
+   work.
+4. `TrajectoryTracker.track()` converts the plan into an MPC reference, runs the
+   controller, and streams prediction frames to `viz.visualization` while
+   recording them when requested. The method returns a `TrackingResult`
+   containing the executed state history.
+5. The orchestrator aggregates the stage outputs into a `PipelineResult` so CLI
+   callers and notebooks can access the intermediate artefacts without probing
+   private attributes.
+
+This sequence mirrors the logical architecture diagram and doubles as a
+checklist when integrating the framework into external applications.
+
+## Key Data Structures
+
+- **`MapArtifacts`** – immutable container for the inflated occupancy grid,
+  start/goal pair, workspace bounds, and (optionally) inflated rectangles used
+  by the axis-aligned RRT variant. It is always produced by `MapStage` before
+  any planner is invoked.
+- **`PlanningArtifacts`** – lightweight wrapper around `PlanResult`, ensuring
+  the orchestrator can extend metadata in the future without changing the stage
+  contract.
+- **`TrackingResult`** – holds the closed-loop state history returned by the MPC
+  tracker. Its minimal surface keeps storage costs low while still providing
+  enough data for plotting or log export.
+- **`PipelineResult`** – aggregates the previous artefacts, providing convenience
+  accessors for the computed path (`plan`) and tracked states (`states`).
+
+These dataclasses codify the coupling between stages and act as the canonical
+place to document new fields when extending the pipeline.
+
+## Failure Handling & Robustness
+
+- **Map preparation** regenerates the base map when `MapConfig.generate` is set
+  or the cached image is missing, ensuring deterministic builds across CI and
+  experiments.
+- **Planning** propagates failure via `PlanResult.success`. The control stage
+  aborts early when this flag is false, preventing undefined behaviour.
+- **Tracking** applies a two-stage relaxation inside `_solve_with_relaxation`
+  when OSQP reports infeasibility, widening rate limits and reducing the target
+  speed before retrying. Persistent infeasibility is logged as an error and the
+  loop exits gracefully.
+- **Visualisation** is optional; when disabled the pipeline still produces a
+  complete `PipelineResult`, enabling batch evaluation on headless machines.
+
+## Performance & Determinism Considerations
+
+- Planning randomness is seeded via `PlannerConfig.random_seed` and the RRT
+  parameters, making generated trees reproducible.
+- Occupancy inflation and reference building operate on NumPy arrays, enabling
+  vectorised execution that scales with map size.
+- The MPC controller warms starts OSQP, reuses linearised dynamics across the
+  horizon, and exposes penalty weights for slack variables so tuning efforts are
+  explicit in configuration rather than hard-coded.
+- Stage-level logging reports timings, iteration counts, and controller
+  progress, providing a low-overhead feedback loop when profiling the system.
+
 ## Stage Contracts
 
 | Stage             | Input artefacts                  | Output artefacts                 | Failure handling                                 |
