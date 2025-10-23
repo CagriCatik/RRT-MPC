@@ -1,4 +1,5 @@
 """Pipeline orchestration package for the RRT-MPC project."""
+from .api import run_pipeline
 from .artifacts import MapArtifacts, PipelineResult, PlanningArtifacts, TrackingResult
 from .control_stage import TrajectoryTracker
 from .map_stage import MapStage
@@ -14,4 +15,5 @@ __all__ = [
     "PlanningStage",
     "TrajectoryTracker",
     "PipelineOrchestrator",
+    "run_pipeline",
 ]

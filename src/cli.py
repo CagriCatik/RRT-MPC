@@ -3,27 +3,16 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Optional, Sequence, Tuple
+from typing import Optional
 
 import click
 
-from .common.types import FloatArray
 from .config import PipelineConfig, default_config, load_config
 from .logging_setup import configure_logging, get_logger
-from .pipeline import MapStage, PipelineOrchestrator, PlanningStage
-from .planning.plan_result import PlanResult
+from .pipeline import MapStage, PlanningStage, run_pipeline
 from .viz.visualization import configure_backend, plot_rrt_star
 
 LOG = get_logger(__name__)
-
-
-def run_pipeline(config: PipelineConfig, *, visualize: bool = True) -> Tuple[PlanResult, Sequence[FloatArray]]:
-    """Execute the full pipeline and return the planner output and tracked states."""
-
-    configure_logging(logging.INFO)
-    orchestrator = PipelineOrchestrator(config)
-    result = orchestrator.run(visualize=visualize)
-    return result.plan, result.states
 
 
 @click.group()
