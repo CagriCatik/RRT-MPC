@@ -33,15 +33,17 @@ Pass a configuration file with `--config custom.yaml` to override defaults.
 ## Python API
 
 ```python
-from src import PipelineConfig, run_pipeline, load_config
+from src import PipelineOrchestrator, load_config
 
-cfg = load_config("configs/pipeline.yaml")
-plan_result, states = run_pipeline(cfg, visualize=False)
-print(plan_result.success, len(states))
+config = load_config("configs/pipeline.yaml")
+orchestrator = PipelineOrchestrator(config)
+result = orchestrator.run(visualize=False)
+print(result.plan.success, len(result.states))
 ```
 
-The returned `states` sequence contains the simulated vehicle trajectory in
-pixel coordinates.
+The helper `run_pipeline` is still available for quick scripts and returns the
+same `(PlanResult, states)` tuple as before. The `PipelineResult` object exposes
+the plan, intermediate artifacts and the tracked state history.
 
 ## Headless Rendering
 

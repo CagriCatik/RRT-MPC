@@ -120,4 +120,9 @@ def load_config(path: str | Path) -> PipelineConfig:
 
 
 def default_config() -> PipelineConfig:
-    return PipelineConfig(map=MapConfig(), planner=PlannerConfig(), mpc=MPCConfig(), viz=VizConfig())
+    return PipelineConfig(
+        map=MapConfig(),
+        planner=PlannerConfig(),
+        mpc=MPCConfig(),
+        viz=VizConfig(),
+    )
