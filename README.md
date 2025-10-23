@@ -2,9 +2,9 @@
 
 A modular Python framework integrating deterministic RRT* for global path planning with a curvature-aware Model Predictive Controller (MPC) for precise vehicle tracking. Initially developed as an academic prototype, the project has been restructured into a maintainable and testable architecture featuring well-defined interfaces, comprehensive documentation, and automated test coverage. It serves as a foundation for research and prototyping in autonomous motion planning rather than a production-grade implementation.
 
-<div style="text-align:center;">
-  <img src="assets\simulation.gif" alt="Cat" width="200">
-</div>
+<p align="center">
+  <img src="assets\simulation.gif" alt="simulation" width="300">
+</p>
 
 ## Key capabilities
 
