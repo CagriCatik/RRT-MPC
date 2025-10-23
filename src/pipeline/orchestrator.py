@@ -1,6 +1,7 @@
 """High-level orchestration utilities for the RRT-MPC pipeline."""
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 
@@ -27,13 +28,28 @@ class PipelineOrchestrator:
 
     def run(self, *, visualize: bool = True) -> PipelineResult:
         LOG.info("Starting pipeline run with visualization=%s", visualize)
+        run_start = time.perf_counter()
         configure_backend(self.config.viz.backend)
 
         map_stage = MapStage(self.config.map)
+        stage_start = time.perf_counter()
         maps = map_stage.build()
+        LOG.info(
+            "Map stage completed in %.2fs (grid=%sx%s)",
+            time.perf_counter() - stage_start,
+            maps.occupancy.shape[1],
+            maps.occupancy.shape[0],
+        )
 
         planning_stage = PlanningStage(self.config.planner)
+        stage_start = time.perf_counter()
         planning = planning_stage.plan(maps)
+        LOG.info(
+            "Planning stage completed in %.2fs (success=%s, path_points=%d)",
+            time.perf_counter() - stage_start,
+            planning.plan.success,
+            len(planning.plan.path),
+        )
 
         axis: Optional["Axes"] = None
         if visualize:
@@ -54,6 +70,7 @@ class PipelineOrchestrator:
                 LOG.info("Saved planning visualisation to %s", resolve_plot_path(save_path))
 
         tracker = TrajectoryTracker(self.config.mpc, self.config.viz)
+        stage_start = time.perf_counter()
         control = tracker.track(
             planning,
             maps,
@@ -62,13 +79,22 @@ class PipelineOrchestrator:
             occupancy=maps.occupancy,
             axis=axis,
         )
+        LOG.info(
+            "Control stage completed in %.2fs (tracked_states=%d)",
+            time.perf_counter() - stage_start,
+            len(control.states),
+        )
 
         if visualize:
             from matplotlib import pyplot as plt
 
             plt.ioff()
 
-        LOG.info("Pipeline run finished with %d tracked states", len(control.states))
+        LOG.info(
+            "Pipeline run finished in %.2fs with %d tracked states",
+            time.perf_counter() - run_start,
+            len(control.states),
+        )
         return PipelineResult(map=maps, planning=planning, control=control)
 
 

@@ -3,6 +3,15 @@
 Configuration is expressed in YAML and deserialised via `yaml.safe_load` into a
 `PipelineConfig` dataclass. The schema mirrors the package structure.
 
+The CLI accepts a `--config` flag pointing to the YAML file. When omitted, the
+package falls back to `config.default_config()` which mirrors the defaults shown
+below. Programmatic entry points (`load_config`, `default_config`) share the same
+code path, so behaviour is consistent between notebooks, scripts and CLI usage.
+
+All relative paths resolve beneath the repository root. Map generation and plots
+use `src.common.paths` to ensure artefacts land in `plots/`, keeping workspaces
+tidy even when running multiple experiments.
+
 ## Map
 
 ```yaml
@@ -23,6 +32,12 @@ map:
 - `goal_offset`: subtracted from the upper-right corner to place the goal.
 - `generate`: when `true` creates a deterministic synthetic map if the file is
   absent.
+- `size_m` / `generator_resolution`: control the procedural generator. Use a
+  finer resolution when you need tighter obstacle placement; remember to update
+  `map_resolution` so the MPC scaling remains valid.
+
+When `generate: true`, the generator persists the base map to disk. Subsequent
+runs reuse the cached image unless `generate` stays true.
 
 ## Planner
 
@@ -38,6 +53,10 @@ planner:
 
 These fields map directly to `PlannerParameters`. The random seed guarantees
 reproducible planning.
+
+Runtime overrides can be applied without editing YAML by constructing
+`PipelineConfig.from_dict({...})` and merging dictionaries. This is useful when
+sweeping hyperparameters inside notebooks.
 
 ## MPC
 
@@ -59,6 +78,10 @@ mpc:
 `wheelbase_m` is converted to pixels using `map_resolution`. Horizon and solver
 settings are passed to the MPC controller unchanged.
 
+`sim_steps` controls the length of the closed-loop roll-out. The controller logs
+progress every ~10% of the configured steps so you can monitor long simulations
+without enabling debug logs.
+
 ## Visualisation
 
 ```yaml
@@ -72,6 +95,12 @@ viz:
 
 - `backend`: forwarded to `matplotlib.use` for headless execution.
 - `record_frames`: enables PNG frame capture of MPC predictions.
+- `prediction_pause`: dwell time between MPC predictions when visualising
+  interactively. Increase this to slow down animations for demos.
+
+Frame directories are timestamped when using the GIF generation CLI helper, so
+multiple recordings can coexist safely. Clean-up is automatic unless the
+`--keep-frames` flag is passed.
 
 ## Example Configuration File
 
@@ -88,3 +117,11 @@ viz:
 ```
 
 Unspecified fields fall back to defaults defined in `config.py`.
+
+### Loading Precedence
+
+1. CLI flag `--config` (if provided).
+2. `default_config()` values embedded in code.
+3. For programmatic usage, pass an already constructed `PipelineConfig` to
+   `run_pipeline` to bypass YAML entirely. This is useful in tests where inline
+   fixtures keep dependencies self-contained.

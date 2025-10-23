@@ -32,6 +32,15 @@ are located in `src/pipeline/`.
   inject it. The `TrackingResult` dataclass is intentionally small so it can be
   extended without breaking callers.
 
+## Coding Conventions
+
+- Use dataclasses to express configuration or artefacts exchanged between
+  modules. They provide structure and make unit tests deterministic.
+- Stick to explicit imports within packages (e.g. `from ..logging_setup`) to
+  avoid circular dependencies.
+- Prefer pure functions for geometry/math utilities; keep side effects in the
+  pipeline stages where logging and error handling are centralised.
+
 ## Numerical Stability Tips
 
 - Always rescale units when adjusting map resolution – the MPC operates in pixel
@@ -51,6 +60,16 @@ are located in `src/pipeline/`.
   states) rather than image-based snapshots. The `FrameRecorder` and
   `assemble_gif` helpers automatically persist assets into `plots/` for manual
   inspection.
+
+## Observability & Debugging
+
+- Call `configure_logging(level)` during experiments to surface stage-level
+  progress information. The pipeline emits timing metrics per stage and MPC
+  progress snapshots at INFO level.
+- Enable DEBUG logging when investigating map generation or planning; modules
+  emit granular detail such as obstacle placement and per-iteration costs.
+- The CLI mirrors the logging output, so you can redirect to files for
+  long-running batches (`python -m src.cli run > run.log`).
 
 ## Documentation Practices
 

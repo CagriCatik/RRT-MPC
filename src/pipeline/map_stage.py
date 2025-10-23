@@ -34,6 +34,8 @@ class MapStage:
             base = generator.generate()
             save_grayscale(path, (base * 255).astype(np.uint8))
             LOG.info("Generated base map at %s", path)
+        else:
+            LOG.info("Loading existing base map from %s", path)
         return load_grayscale(path)
 
     def inflate(self, raw_map: np.ndarray) -> np.ndarray:
@@ -52,6 +54,11 @@ class MapStage:
     def build(self) -> MapArtifacts:
         """Materialize all map-related assets for downstream stages."""
 
+        LOG.info(
+            "Preparing map artifacts (resolution=%.2fm, inflation=%.2fm)",
+            self.config.map_resolution,
+            self.config.inflation_radius_m,
+        )
         raw = self.ensure_base_map()
         inflated = self.inflate(raw)
         occupancy = to_occupancy_grid(inflated)
@@ -61,7 +68,13 @@ class MapStage:
             occupancy.shape[1] - self.config.goal_offset[0],
             occupancy.shape[0] - self.config.goal_offset[1],
         )
-        LOG.debug("Map prepared with start=%s goal=%s", start, goal)
+        LOG.info(
+            "Map stage ready: occupancy=%sx%s start=%s goal=%s",
+            occupancy.shape[1],
+            occupancy.shape[0],
+            start,
+            goal,
+        )
         return MapArtifacts(occupancy=occupancy, start=start, goal=goal)
 
 

@@ -44,6 +44,17 @@ command line and Python API.
 
 Pass a configuration file with `--config custom.yaml` to override defaults.
 
+### CLI Options
+
+- `--config PATH` – load parameters from a YAML file.
+- `--help` – every sub-command documents its stage-specific arguments (e.g.
+  `generate-gif --help`).
+- `--keep-frames` (for `generate-gif`) – retain intermediate PNGs for manual
+  curation or post-processing.
+
+CLI invocations emit INFO-level logging to the terminal. Redirect to a file for
+batch runs (`python -m src.cli run --config sweep.yaml > sweep.log`).
+
 ## Python API
 
 ```python
@@ -59,6 +70,11 @@ The helper `run_pipeline` is still available for quick scripts and returns the
 same `(PlanResult, states)` tuple as before. The `PipelineResult` object exposes
 the plan, intermediate artifacts and the tracked state history.
 
+Wrap simulations in `with configure_logging(...):` blocks or call
+`configure_logging(logging.DEBUG)` for verbose traces when debugging. The
+orchestrator logs stage durations and the controller reports progress at regular
+intervals, making notebook execution as observable as the CLI.
+
 ## Headless Rendering
 
 Set `viz.backend: "Agg"` in the configuration or call
@@ -66,3 +82,12 @@ Set `viz.backend: "Agg"` in the configuration or call
 `viz.record_frames: true`; the PNG frames are saved in `plots/<viz.record_dir>/`
 and can be converted into GIFs via the CLI or
 [`examples/generate_simulation_gif.py`](../examples/generate_simulation_gif.py).
+
+## Troubleshooting
+
+- If planning fails, inspect the logged iteration summaries to identify whether
+  the sampler exhausted iterations or collisions prevented goal connection.
+- MPC infeasibility triggers warning logs; check whether `map_resolution`
+  changes demand a different `wheelbase_m` or relaxed rate bounds.
+- Confirm generated maps exist under `plots/maps/` when running in headless
+  environments—`MapStage` logs the resolved paths for quick verification.

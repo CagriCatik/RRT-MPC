@@ -19,6 +19,12 @@ class PlanningStage:
 
     def plan(self, maps: MapArtifacts) -> PlanningArtifacts:
         params = self.config.to_parameters()
+        LOG.info(
+            "Starting planning stage (max_iterations=%d, step=%.1f, goal_radius=%.1f)",
+            params.max_iterations,
+            params.step,
+            params.goal_radius,
+        )
         planner = RRTStarPlanner(maps.occupancy, params)
         result = planner.plan(maps.start, maps.goal)
         LOG.info(
