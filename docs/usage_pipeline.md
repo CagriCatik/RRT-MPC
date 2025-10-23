@@ -7,7 +7,8 @@ command line and Python API.
 
 1. Install dependencies with `pip install -e .[dev]`.
 2. Ensure the default configuration (or your own YAML file) points to writable
-   locations for generated maps and visualisations.
+   locations for generated maps and visualisations. Relative paths are resolved
+   under the `plots/` directory automatically.
 
 ## Command Line Workflow
 
@@ -27,24 +28,32 @@ command line and Python API.
    ```bash
    python -m src.cli run
    ```
+5. **Export Simulation GIF** (captures frames then assembles the animation):
+   ```bash
+   python -m src.cli generate-gif
+   ```
 
 Pass a configuration file with `--config custom.yaml` to override defaults.
 
 ## Python API
 
 ```python
-from src import PipelineConfig, run_pipeline, load_config
+from src import PipelineOrchestrator, load_config
 
-cfg = load_config("configs/pipeline.yaml")
-plan_result, states = run_pipeline(cfg, visualize=False)
-print(plan_result.success, len(states))
+config = load_config("configs/pipeline.yaml")
+orchestrator = PipelineOrchestrator(config)
+result = orchestrator.run(visualize=False)
+print(result.plan.success, len(result.states))
 ```
 
-The returned `states` sequence contains the simulated vehicle trajectory in
-pixel coordinates.
+The helper `run_pipeline` is still available for quick scripts and returns the
+same `(PlanResult, states)` tuple as before. The `PipelineResult` object exposes
+the plan, intermediate artifacts and the tracked state history.
 
 ## Headless Rendering
 
 Set `viz.backend: "Agg"` in the configuration or call
 `configure_backend("Agg")` before plotting. Enable frame recording with
-`viz.record_frames: true` to store prediction snapshots under `viz.record_dir`.
+`viz.record_frames: true`; the PNG frames are saved in `plots/<viz.record_dir>/`
+and can be converted into GIFs via the CLI or
+[`examples/generate_simulation_gif.py`](../examples/generate_simulation_gif.py).

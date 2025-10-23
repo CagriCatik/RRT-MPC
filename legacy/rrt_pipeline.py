@@ -14,14 +14,15 @@ import matplotlib.pyplot as plt
 import random
 from math import sqrt, atan2, cos, sin
 import time
+from pathlib import Path
 
 # ===============================================================
 # CONFIGURATION
 # ===============================================================
 CONFIG = {
-    "map_file": "occupancy_grid.png",          # input map (white=free)
-    "inflated_map_file": "occupancy_inflated.png",
-    "path_output_file": "rrt_path_pipeline.png",
+    "map_file": "maps/occupancy_grid.png",          # input map (white=free)
+    "inflated_map_file": "maps/occupancy_inflated.png",
+    "path_output_file": "planner/legacy/rrt_path_pipeline.png",
     "map_resolution": 0.2,                     # meters per pixel
     "inflation_radius_m": 0.6,                 # safety margin in meters
     "start": (50, 50),                         # start coordinates (pixels)
@@ -43,6 +44,14 @@ class Node:
 
 
 # ---------------------------- Utility Functions ---------------------------- #
+
+def _resolve_plot_path(path):
+    target = Path(path)
+    if not target.is_absolute():
+        target = Path("plots") / target
+    target.parent.mkdir(parents=True, exist_ok=True)
+    return str(target)
+
 
 def distance(a, b):
     return sqrt((a.x - b.x)**2 + (a.y - b.y)**2)
@@ -145,7 +154,9 @@ def rrt_with_animation(occ, start, goal, cfg):
 # ---------------------------- Main Pipeline ---------------------------- #
 
 def main():
-    cfg = CONFIG
+    cfg = CONFIG.copy()
+    for key in ("map_file", "inflated_map_file", "path_output_file"):
+        cfg[key] = _resolve_plot_path(cfg[key])
     print("=== RRT PIPELINE START ===")
 
     # Step 1: Load original map

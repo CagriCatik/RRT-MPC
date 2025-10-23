@@ -13,12 +13,13 @@ import matplotlib.pyplot as plt
 import random
 from math import sqrt, atan2, cos, sin
 import time
+from pathlib import Path
 
 # ===============================================================
 # Config
 # ===============================================================
 CONFIG = {
-    "map_file": "occupancy_grid.png",
+    "map_file": "maps/occupancy_grid.png",
     "start": (50, 50),
     "goal_offset": (50, 50),
     "step_size": 10,
@@ -26,7 +27,7 @@ CONFIG = {
     "max_iterations": 2000,
     "goal_sample_rate": 0.1,   # chance to sample goal
     "animate_delay": 0.001,
-    "save_path": "rrt_path_live.png"
+    "save_path": "planner/legacy/rrt_path_live.png"
 }
 # ===============================================================
 
@@ -124,8 +125,20 @@ def rrt_live(occ, start, goal, step, goal_radius, max_iter, goal_prob, delay, sa
     plt.show()
 
 
+def _resolve_plot_path(path):
+    target = Path(path)
+    if not target.is_absolute():
+        target = Path("plots") / target
+    target.parent.mkdir(parents=True, exist_ok=True)
+    return str(target)
+
+
 def main():
-    img = cv2.imread(CONFIG["map_file"], cv2.IMREAD_GRAYSCALE)
+    cfg = CONFIG.copy()
+    for key in ("map_file", "save_path"):
+        cfg[key] = _resolve_plot_path(cfg[key])
+
+    img = cv2.imread(cfg["map_file"], cv2.IMREAD_GRAYSCALE)
     occ = (img > 200).astype(np.uint8)
     occ = np.flipud(occ)
 
@@ -140,12 +153,12 @@ def main():
         occ,
         start,
         goal,
-        CONFIG["step_size"],
-        CONFIG["goal_radius"],
-        CONFIG["max_iterations"],
-        CONFIG["goal_sample_rate"],
-        CONFIG["animate_delay"],
-        CONFIG["save_path"],
+        cfg["step_size"],
+        cfg["goal_radius"],
+        cfg["max_iterations"],
+        cfg["goal_sample_rate"],
+        cfg["animate_delay"],
+        cfg["save_path"],
     )
 
 

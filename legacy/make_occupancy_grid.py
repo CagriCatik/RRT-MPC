@@ -6,6 +6,8 @@ Black = occupied
 No axes or labels.
 """
 
+from pathlib import Path
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -31,10 +33,14 @@ def generate_grid(size_m=(80, 80), resolution=1.0):
 
     return grid
 
-def save_png(grid, path="occupancy_grid.png"):
+def save_png(grid, path="maps/occupancy_grid.png"):
+    target = Path(path)
+    if not target.is_absolute():
+        target = Path("plots") / target
+    target.parent.mkdir(parents=True, exist_ok=True)
     plt.imshow(grid, cmap="gray", origin="upper", vmin=0, vmax=1)
     plt.axis("off")
-    plt.savefig(path, bbox_inches="tight", pad_inches=0, dpi=200, format="png")
+    plt.savefig(target, bbox_inches="tight", pad_inches=0, dpi=200, format="png")
     plt.close()
 
 if __name__ == "__main__":

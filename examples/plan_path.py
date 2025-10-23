@@ -1,10 +1,9 @@
 """Example script: run deterministic RRT* planning on an inflated map."""
 from __future__ import annotations
 
-from pathlib import Path
-
 import numpy as np
 
+from src.common.paths import resolve_plot_path
 from src.config import default_config
 from src.maps.generator import MapGenerator
 from src.maps.inflate import inflate_grayscale_map, to_occupancy_grid
@@ -17,7 +16,7 @@ def main() -> None:
     cfg = default_config()
     configure_backend("Agg")
 
-    map_path = Path(cfg.map.map_file)
+    map_path = resolve_plot_path(cfg.map.map_file)
     if not map_path.exists():
         generator = MapGenerator(cfg.map.size_m, cfg.map.generator_resolution, seed=cfg.map.generator_seed)
         grid = generator.generate()
@@ -30,7 +29,14 @@ def main() -> None:
     start = cfg.map.start
     goal = (occupancy.shape[1] - cfg.map.goal_offset[0], occupancy.shape[0] - cfg.map.goal_offset[1])
     result = planner.plan(start, goal)
-    plot_rrt_star(occupancy, start, goal, result, show_tree=True, save_path="rrt_path.png")
+    plot_rrt_star(
+        occupancy,
+        start,
+        goal,
+        result,
+        show_tree=True,
+        save_path="planner/examples/rrt_path.png",
+    )
 
 
 if __name__ == "__main__":

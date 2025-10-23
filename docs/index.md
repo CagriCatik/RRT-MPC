@@ -16,6 +16,7 @@ tuning strategies.
 - [Pipeline Usage](usage_pipeline.md) – running the end-to-end system from CLI
   and Python APIs.
 - [Configuration](configuration.md) – YAML schema, defaults and override tips.
+- [Developer Guide](developer_guide.md) – contribution workflow and extension points.
 
 Each document is self-contained and includes references to the relevant code
 modules. All equations are provided using standard Markdown+LaTeX syntax.

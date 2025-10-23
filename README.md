@@ -1,45 +1,71 @@
 # MPC RRT* Motion Planning Framework
 
-A modular Python package that combines deterministic RRT* global path planning with
-a vehicle-dynamics-aware Model Predictive Controller (MPC) for tracking. The project
-originates from a working prototype and has been refactored into a production-grade
-package complete with documentation, configuration management, command line tools and
-unit tests.
+A production-ready Python package that combines deterministic RRT* global path planning
+with a curvature-aware Model Predictive Controller (MPC) for vehicle tracking. The code
+base started as an academic prototype and has been refactored into a modular
+architecture with clear interfaces, documentation, and automated tests.
 
-## Architecture Overview
+## Key capabilities
+
+- **Deterministic RRT\*** planner with configurable sampling, rewiring, and goal bias
+  to guarantee reproducible global paths.
+- **Bicycle-model MPC** tracker that enforces steering, rate, and velocity limits while
+  remaining numerically well-conditioned through an OSQP backend.
+- **Pipeline orchestrator** that composes map preparation, planning, and control stages
+  into reusable building blocks for scripts, services, or notebooks.
+- **Headless-friendly visualisation** utilities for generating artefacts and recording
+  simulations without a display.
+- **Extensive documentation** including developer guides, architecture notes, and
+  theory references for MPC tuning and vehicle dynamics.
+- **Centralised artefact handling** that writes every map, plot, and animation into
+  the version-controlled `plots/` directory for easy inspection.
+
+All generated images (inflated maps, RRT* trees, MPC prediction frames, and GIFs) are
+materialised beneath `plots/`, keeping the repository tidy and outputs reproducible.
+
+## Architecture at a glance
+
+```mermaid
+digraph Pipeline {
+    rankdir=LR
+    Config["PipelineConfig\n(YAML or defaults)"]
+    CLI["CLI (click)"]
+    API["Python API"]
+    Orchestrator["PipelineOrchestrator"]
+    MapStage["MapStage\noccupancy & inflation"]
+    PlanningStage["PlanningStage\nRRT* planner"]
+    ControlStage["TrajectoryTracker\nMPC"]
+    Viz["Visualization"]
+
+    Config -> CLI
+    Config -> API
+    CLI -> Orchestrator
+    API -> Orchestrator
+    Orchestrator -> MapStage -> PlanningStage -> ControlStage
+    ControlStage -> Viz
+}
+```
+
+The `PipelineOrchestrator` produces immutable artefacts describing each stage. They can
+be reused to visualise the tree, analyse trajectories, or feed downstream components.
+A deeper architectural discussion lives in [`docs/architecture.md`](docs/architecture.md).
+
+## Repository layout
 
 ```
 src/
-├── maps/          # Occupancy grid generation, IO and inflation
-├── planning/      # Deterministic RRT* planner with structured outputs
-├── control/       # Vehicle model, MPC controller and reference builders
-├── viz/           # Headless-capable visualisation utilities
-├── common/        # Shared geometry and type helpers
-├── cli.py         # Click-based CLI for maps, planning and the full pipeline
-└── config.py      # YAML-driven configuration dataclasses
+├── common/           # Geometry helpers and array typing utilities
+├── config.py         # Dataclasses + YAML loader for pipeline configuration
+├── pipeline/         # Map, planning, and control stages with orchestrator + API
+├── planning/         # Deterministic RRT* implementation and data structures
+├── control/          # MPC dynamics, linearisation, and solver wrappers
+├── maps/             # Occupancy grid generators and inflation helpers
+├── viz/              # Matplotlib-based plotting utilities
+└── cli.py            # Click-powered command line entry points
 ```
 
-The end-to-end pipeline performs the following steps:
-
-1. Generate or load an occupancy grid, then inflate obstacles using the vehicle safety
-   margin.
-2. Compute a deterministic RRT* tree and extract a kinematically feasible path.
-3. Build a curvature-aware reference trajectory and track it with an OSQP-backed MPC
-   that enforces velocity, input and rate limits.
-4. Visualise the tree, solution path, MPC predictions and tracked vehicle states.
-
-## Theory of Operation
-
-* **RRT\***: A deterministic variant with configurable step size, goal bias, rewire radius
-  and iteration count. Collision checking operates on the inflated occupancy grid to
-  guarantee clearance.
-* **MPC Tracking**: A kinematic bicycle model is linearised along the reference window
-  and discretised with forward Euler. The controller solves a strictly convex QP with
-  quadratic slack penalties for velocity, input and rate constraints. OSQP parameters
-  are tuned (``rho=0.1``, ``alpha=1.6``, ``adaptive_rho=True``) for numerical robustness.
-
-Further theoretical details, derivations and design rationales are documented in the
-[`docs/`](docs/index.md) directory.
+Additional documentation resides in [`docs/`](docs/index.md) and runnable examples in
+[`examples/`](examples/).
 
 ## Installation
 
@@ -50,122 +76,78 @@ pip install --upgrade pip
 pip install -e .[dev]
 ```
 
-This installs runtime dependencies (NumPy, OpenCV, matplotlib, cvxpy, click, PyYAML)
-plus development tools (pytest, mypy, ruff, black).
+The optional `[dev]` extras install testing, linting, and formatting tooling.
 
-## Command Line Interface
+## Command line usage
 
-All capabilities are exposed via the ``mpc-rrt-star`` CLI:
+All workflows are exposed via the Click-based CLI:
 
 ```bash
-python -m src.cli --config configs/pipeline.yaml run
+# Generate the base occupancy grid according to the configuration
 python -m src.cli generate-map
+
+# Inflate the map and persist the result
 python -m src.cli inflate-map
+
+# Run deterministic RRT* planning and visualise the tree
 python -m src.cli plan-path
-```
 
-Use ``--config`` to point to a YAML configuration file. Without it the built-in defaults
-are used. The CLI emits deterministic logs suitable for automation.
-
-## Configuration
-
-Configuration is assembled from the following schema:
-
-```yaml
-map:
-  map_file: occupancy_grid.png
-  inflated_map_file: occupancy_grid_inflated.png
-  map_resolution: 0.2
-  inflation_radius_m: 0.6
-  start: [50, 50]
-  goal_offset: [50, 50]
-planner:
-  step_size: 10
-  goal_radius: 15
-  max_iterations: 3000
-  rewire_radius: 25
-  goal_sample_rate: 0.1
-  random_seed: 13
-mpc:
-  wheelbase_m: 2.8
-  dt: 0.1
-  horizon: 12
-  v_px_s: 28.0
-  sim_steps: 600
-viz:
-  backend: Agg
-  prediction_pause: 0.05
-  animate_tree: true
-  record_frames: false
-```
-
-See [`docs/configuration.md`](docs/configuration.md) for a complete reference.
-
-## Simulation Demo
-
-1. Generate a map and inflated occupancy grid:
-   ```bash
-   python -m src.cli generate-map
-   python -m src.cli inflate-map
-   ```
-2. Run deterministic RRT* planning and capture the tree:
-   ```bash
-   python -m src.cli plan-path
-   ```
-3. Execute the full pipeline with MPC tracking:
-   ```bash
-   python -m src.cli run
-   ```
-
-During the run the package renders the RRT* tree, planned path, MPC predictions and the
-tracked vehicle states. For headless environments set ``viz.backend`` to ``Agg``.
-
-## Documentation
-
-The documentation set lives under [`docs/`](docs/index.md) and covers:
-
-* Software architecture and module interactions
-* MPC derivations and solver tuning
-* Vehicle dynamics and model linearisation
-* RRT* planning theory and parameter selection
-* End-to-end usage walkthroughs and configuration guides
-
-## Contact & Citation
-
-For enquiries, please contact the maintainers via `research@example.com` and cite this
-work as:
-
-> OpenAI Prototype Team (2024). *MPC RRT* Motion Planning Framework.* Version 0.1.0.
-
-
-# MPC RRT* Motion Planning Toolkit
-
-This repository hosts the `src` Python package, a modular implementation of
-deterministic RRT* path planning combined with a model-predictive controller for
-kinematic bicycle models. All actively maintained source code, documentation, and tests
-live under [`src/`](src/).
-
-Legacy prototype scripts and generated artefacts have been removed in favour of the
-package, which offers a clean command-line interface, reusable modules, and automated
-test coverage.
-
-## Getting started
-
-```bash
-cd src
-python -m venv .venv
-source .venv/bin/activate
-pip install -e .[dev]
-```
-
-With the environment active you can execute the full planning and control pipeline:
-
-```bash
+# Execute the full pipeline with MPC tracking and visualisation
 python -m src.cli run
+
+# Produce a GIF of the recorded simulation frames
+python -m src.cli generate-gif
 ```
 
-The CLI automatically generates a deterministic test map if none is present and writes
-visualisation artefacts (inflated map, RRT* tree snapshot, optional frame dumps) to the
-working directory. Additional commands such as `generate-map`, `inflate-map`, and
-`plan-path` are available; consult [`src/README.md`](src/README.md) for
-a complete overview.
+Pass `--config path/to/config.yaml` to override the defaults from `PipelineConfig`.
+For headless environments set `viz.backend` to `Agg` in the configuration file.
+
+## Output artefacts
+
+The repository ships with a tracked `plots/` directory (ignored except for
+`.gitignore`) where every command stores its outputs:
+
+- `plots/maps/` – base and inflated occupancy grids.
+- `plots/planner/` – RRT* tree snapshots from CLI commands and orchestrator runs.
+- `plots/frames/` – intermediate MPC prediction frames when recording is enabled.
+- `plots/animations/` – GIFs composed from recorded frames via `generate-gif` or
+  [`examples/generate_simulation_gif.py`](examples/generate_simulation_gif.py).
+
+The helper script `examples/generate_simulation_gif.py` mirrors the CLI command and
+demonstrates programmatic GIF assembly using the public API.
+
+## Programmatic API
+
+Use the high-level helper for scripts or notebooks:
+
+```python
+from src import PipelineConfig, load_config, run_pipeline
+
+config = load_config("configs/pipeline.yaml")
+plan_result, tracked_states = run_pipeline(config, visualize=False)
+print(f"Reached goal with {len(plan_result.path)} path points")
+```
+
+For granular control import the individual stages from `src.pipeline` and compose them
+manually (see [`examples/run_pipeline.py`](examples/run_pipeline.py)).
+
+## Testing
+
+Run the automated test suite with:
+
+```bash
+pytest
+```
+
+The tests validate stage interfaces, pipeline orchestration, and configuration
+loading. Continuous integration can extend this with linting and static analysis.
+
+## Further reading
+
+- [`docs/developer_guide.md`](docs/developer_guide.md) – conventions, architecture
+  decisions, and extension guidelines.
+- [`docs/usage_pipeline.md`](docs/usage_pipeline.md) – step-by-step tutorial for
+  configuring and running the full stack.
+- [`docs/architecture.md`](docs/architecture.md) – detailed diagrams and data flow.
+
+For enquiries please contact the maintainers at `research@example.com`.
