@@ -21,8 +21,8 @@ and keep the prototype production-ready.
 The orchestration layer is intentionally declarative. The relevant entry points
 are located in `src/pipeline/`.
 
-- `MapStage.build()` prepares `MapArtifacts` (occupancy grid, start, goal,
-  workspace bounds and optional rectangular obstacles). Custom map sources should
+- `MapStage.build()` prepares `MapArtifacts` (raw/inflated occupancy grids,
+  inflation mask, start, goal, workspace bounds). Custom map sources should
   implement a small helper that returns the same dataclass to remain compatible.
 - `PlanningStage.plan()` is where new planners can be inserted. Wrap your
   implementation inside a class that consumes `MapArtifacts` and returns a

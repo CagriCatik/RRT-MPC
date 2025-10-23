@@ -3,12 +3,14 @@ from __future__ import annotations
 
 import math
 
+import math
+
 import numpy as np
 
-from src.planning.rrt import (
+from src.planning.rrt_star import (
     Rect,
-    RRTParameters,
-    RRTPlanner,
+    PlannerParameters,
+    RRTStarPlanner,
     catmull_rom_spline,
     inflate_rect,
     prune_path,
@@ -40,21 +42,28 @@ def test_prune_path_removes_redundant_waypoints() -> None:
     assert tuple(pruned[-1]) == (4.0, 4.0)
 
 
-def test_rrt_planner_finds_path_without_obstacles() -> None:
-    params = RRTParameters(
-        step=2.5,
-        goal_sample_rate=0.15,
-        max_iterations=4000,
-        goal_tolerance=2.0,
-        collision_step=0.5,
-        rng_seed=5,
+def test_rrt_star_planner_smooths_path_in_free_space() -> None:
+    occupancy = np.ones((40, 40), dtype=np.uint8)
+    params = PlannerParameters(
+        step=3.0,
+        goal_radius=2.5,
+        max_iterations=2000,
+        rewire_radius=6.0,
+        goal_sample_rate=0.2,
+        random_seed=5,
         prune_path=True,
-        spline_samples=8,
+        spline_samples=6,
+        spline_alpha=0.5,
+        dedupe_tolerance=1e-9,
+        collision_step=0.5,
     )
-    planner = RRTPlanner(obstacles=(), workspace=((0.0, 30.0), (0.0, 30.0)), params=params)
+    planner = RRTStarPlanner(occupancy, params)
     start = (2.0, 2.0)
-    goal = (28.0, 28.0)
+    goal = (35.0, 35.0)
     result = planner.plan(start, goal)
     assert result.success
     assert len(result.raw_path) >= 2
-    assert result.smoothed_path is None or len(result.smoothed_path) >= len(result.raw_path)
+    assert result.smoothed_path is not None
+    assert len(result.smoothed_path) >= 2
+    assert result.smoothed_path[0] == result.raw_path[0]
+    assert result.smoothed_path[-1] == result.raw_path[-1]

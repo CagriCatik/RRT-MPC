@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from src.maps.generator import MapGenerator
 from src.planning.rrt_star import PlannerParameters, RRTStarPlanner
@@ -15,4 +16,9 @@ def test_rrt_star_deterministic_path() -> None:
     result = planner.plan(start, goal)
     assert result.success
     assert len(result.path) > 5
-    assert result.path[0] == (start[0], start[1])
+    assert result.path[0] == pytest.approx((start[0], start[1]))
+    assert result.raw_path
+    if result.pruned_path:
+        assert len(result.pruned_path) <= len(result.raw_path)
+    if result.smoothed_path:
+        assert len(result.smoothed_path) >= len(result.raw_path)

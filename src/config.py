@@ -9,7 +9,6 @@ from typing import Any, Dict, Tuple, Type, TYPE_CHECKING
 import numpy as np
 
 from .logging_setup import get_logger
-from .planning.rrt import RRTParameters
 from .planning.rrt_star import PlannerParameters
 from .control.mpc_controller import MPCParameters
     
@@ -21,7 +20,7 @@ class MapConfig:
     map_file: str = "maps/occupancy_grid.png"
     inflated_map_file: str = "maps/occupancy_grid_inflated.png"
     map_resolution: float = 0.8
-    inflation_radius_m: float = 0.5
+    inflation_radius_m: float = 0.75
     start: Tuple[int, int] = (70, 70)
     goal_offset: Tuple[int, int] = (70, 70)
     generate: bool = False
@@ -41,12 +40,7 @@ class PlannerConfig:
     rewire_radius: float = 20.0
     goal_sample_rate: float = 0.1
     random_seed: int = 13
-    rrt_step: float = 1.0
-    rrt_goal_sample_rate: float = 0.07
-    rrt_max_iterations: int = 15_000
-    rrt_goal_tolerance: float = 4.0
     rrt_collision_step: float = 0.75
-    rrt_rng_seed: int = 7
     rrt_prune_path: bool = True
     rrt_spline_samples: int = 20
     rrt_spline_alpha: float = 0.5
@@ -60,20 +54,11 @@ class PlannerConfig:
             rewire_radius=self.rewire_radius,
             goal_sample_rate=self.goal_sample_rate,
             random_seed=self.random_seed,
-        )
-
-    def to_rrt_parameters(self) -> RRTParameters:
-        return RRTParameters(
-            step=self.rrt_step,
-            goal_sample_rate=self.rrt_goal_sample_rate,
-            max_iterations=self.rrt_max_iterations,
-            goal_tolerance=self.rrt_goal_tolerance,
-            collision_step=self.rrt_collision_step,
-            rng_seed=self.rrt_rng_seed,
             prune_path=self.rrt_prune_path,
             spline_samples=self.rrt_spline_samples,
             spline_alpha=self.rrt_spline_alpha,
             dedupe_tolerance=self.rrt_dedupe_tolerance,
+            collision_step=self.rrt_collision_step,
         )
 
 

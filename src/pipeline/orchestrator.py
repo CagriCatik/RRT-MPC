@@ -63,6 +63,7 @@ class PipelineOrchestrator:
                 maps.goal,
                 planning.plan,
                 show_tree=self.config.viz.animate_tree,
+                inflation_mask=maps.inflation_mask,
                 save_path=save_path,
                 keep_open=True,
             )

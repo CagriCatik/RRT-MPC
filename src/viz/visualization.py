@@ -5,9 +5,10 @@ from pathlib import Path as FilePath
 from typing import Dict, List, Optional, Sequence
 
 import matplotlib
-from matplotlib import rcsetup
+from matplotlib import colors as mcolors, rcsetup
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from matplotlib.patches import Patch
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -75,15 +76,31 @@ def _prepare_axis(ax: Optional[Axes]) -> tuple[Figure, Axes, bool]:
     return fig, axis, created
 
 
-def _update_legend(ax: Axes) -> None:
+def _update_legend(ax: Axes, *, extra_handles: Sequence[object] = ()) -> None:
+    stored: Dict[str, object] = dict(getattr(ax, "_rrt_extra_legend", {}))  # type: ignore[attr-defined]
+    for handle in extra_handles:
+        label = getattr(handle, "get_label", lambda: "")()
+        if not label or label.startswith("_"):
+            continue
+        stored[label] = handle
+
     handles, labels = ax.get_legend_handles_labels()
     unique: Dict[str, object] = {}
     for handle, label in zip(handles, labels):
         if not label or label.startswith("_"):
             continue
         unique[label] = handle
+
+    for label, handle in stored.items():
+        unique[label] = handle
+
     if unique:
         ax.legend(list(unique.values()), list(unique.keys()), loc="lower right")
+
+    if stored:
+        ax._rrt_extra_legend = stored  # type: ignore[attr-defined]
+    elif hasattr(ax, "_rrt_extra_legend"):
+        delattr(ax, "_rrt_extra_legend")
 
 
 def plot_rrt_star(
@@ -93,12 +110,39 @@ def plot_rrt_star(
     result: PlanResult,
     *,
     show_tree: bool = True,
+    inflation_mask: Optional[np.ndarray] = None,
     save_path: Optional[str | FilePath] = None,
     ax: Optional[Axes] = None,
     keep_open: bool = False,
 ) -> Axes:
     fig, axis, created = _prepare_axis(ax)
-    axis.imshow(occupancy, cmap="gray", origin="lower")
+    base_image = axis.imshow(occupancy, cmap="gray", origin="lower")
+    base_image.set_label("Occupancy")
+
+    legend_handles: List[object] = []
+    if inflation_mask is not None and inflation_mask.size:
+        highlight = np.zeros_like(occupancy, dtype=float)
+        highlight[np.asarray(inflation_mask, dtype=bool)] = 1.0
+        cmap = mcolors.ListedColormap([(0.0, 0.0, 0.0, 0.0), "#ff7f0e"])
+        inflated_image = axis.imshow(
+            highlight,
+            cmap=cmap,
+            origin="lower",
+            alpha=0.75,
+            interpolation="nearest",
+            zorder=3,
+            vmin=0.0,
+            vmax=1.0,
+        )
+        inflated_image.set_label("Inflated Obstacle")
+        legend_handles.append(
+            Patch(
+                facecolor="#ff7f0e",
+                edgecolor="none",
+                alpha=0.75,
+                label="Inflated Obstacle",
+            )
+        )
     axis.plot(start[0], start[1], "blue", marker="o", linestyle="None", label="Start")
     axis.plot(goal[0], goal[1], "red", marker="o", linestyle="None", label="Goal")
 
@@ -127,7 +171,7 @@ def plot_rrt_star(
     axis.set_xlim(0, occupancy.shape[1])
     axis.set_ylim(0, occupancy.shape[0])
     axis.set_title("RRT* Path Planning")
-    _update_legend(axis)
+    _update_legend(axis, extra_handles=legend_handles)
 
     axis._prediction_artists = artists  # type: ignore[attr-defined]
 

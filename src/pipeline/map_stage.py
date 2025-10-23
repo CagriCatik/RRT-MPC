@@ -12,7 +12,7 @@ from ..logging_setup import get_logger
 from ..maps.generator import MapGenerator
 from ..maps.inflate import inflate_grayscale_map, to_occupancy_grid
 from ..maps.io import load_grayscale, save_grayscale
-from ..planning.rrt import Rect, inflate_obstacles
+from ..planning.rrt_star import Rect, inflate_obstacles
 from .artifacts import MapArtifacts
 
 LOG = get_logger(__name__)
@@ -64,8 +64,9 @@ class MapStage:
         )
         raw = self.ensure_base_map()
         inflated = self.inflate(raw)
-        occupancy = to_occupancy_grid(inflated)
-        occupancy = np.flipud(occupancy)
+        raw_occupancy = np.flipud(to_occupancy_grid(raw))
+        occupancy = np.flipud(to_occupancy_grid(inflated))
+        inflation_mask = (raw_occupancy == 1) & (occupancy == 0)
         workspace = ((0.0, float(occupancy.shape[1])), (0.0, float(occupancy.shape[0])))
         start = self.config.start
         goal = (
@@ -87,6 +88,8 @@ class MapStage:
         )
         return MapArtifacts(
             occupancy=occupancy,
+            raw_occupancy=raw_occupancy,
+            inflation_mask=inflation_mask,
             start=start,
             goal=goal,
             workspace=workspace,

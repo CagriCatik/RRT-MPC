@@ -6,8 +6,7 @@ from dataclasses import dataclass
 from ..config import PlannerConfig
 from ..logging_setup import get_logger
 from ..planning.plan_result import PlanResult
-from ..planning.rrt import RRTPlanner, catmull_rom_spline
-from ..planning.rrt_star import RRTStarPlanner
+from ..planning.rrt_star import RRTStarPlanner, catmull_rom_spline
 from .artifacts import MapArtifacts, PlanningArtifacts
 
 LOG = get_logger(__name__)
@@ -21,26 +20,20 @@ class PlanningStage:
 
     def plan(self, maps: MapArtifacts) -> PlanningArtifacts:
         algorithm = self.config.algorithm.lower()
-        if algorithm == "rrt":
-            params = self.config.to_rrt_parameters()
-            LOG.info(
-                "Starting RRT planner (max_iterations=%d, step=%.1f, goal_tol=%.1f)",
-                params.max_iterations,
-                params.step,
-                params.goal_tolerance,
+        params = self.config.to_parameters()
+        if algorithm != "rrt_star":
+            LOG.warning(
+                "Planner algorithm '%s' is no longer supported; falling back to RRT*.",
+                algorithm,
             )
-            planner = RRTPlanner(obstacles=maps.rect_obstacles, workspace=maps.workspace, params=params)
-            result = planner.plan(maps.start, maps.goal)
-        else:
-            params = self.config.to_parameters()
-            LOG.info(
-                "Starting RRT* planner (max_iterations=%d, step=%.1f, goal_radius=%.1f)",
-                params.max_iterations,
-                params.step,
-                params.goal_radius,
-            )
-            planner = RRTStarPlanner(maps.occupancy, params)
-            result = planner.plan(maps.start, maps.goal)
+        LOG.info(
+            "Starting RRT* planner (max_iterations=%d, step=%.1f, goal_radius=%.1f)",
+            params.max_iterations,
+            params.step,
+            params.goal_radius,
+        )
+        planner = RRTStarPlanner(maps.occupancy, params)
+        result = planner.plan(maps.start, maps.goal)
         self._smooth_path_if_configured(result)
         LOG.info(
             "Planning finished: success=%s iterations=%d nodes=%d",

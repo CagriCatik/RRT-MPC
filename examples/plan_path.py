@@ -24,7 +24,9 @@ def main() -> None:
 
     raw_map = load_grayscale(cfg.map.map_file)
     inflated = inflate_grayscale_map(raw_map, cfg.map.inflation_radius_m, cfg.map.map_resolution)
+    raw_occupancy = np.flipud(to_occupancy_grid(raw_map))
     occupancy = np.flipud(to_occupancy_grid(inflated))
+    inflation_mask = (raw_occupancy == 1) & (occupancy == 0)
     planner = RRTStarPlanner(occupancy, cfg.planner.to_parameters())
     start = cfg.map.start
     goal = (occupancy.shape[1] - cfg.map.goal_offset[0], occupancy.shape[0] - cfg.map.goal_offset[1])
@@ -35,6 +37,7 @@ def main() -> None:
         goal,
         result,
         show_tree=True,
+        inflation_mask=inflation_mask,
         save_path="planner/examples/rrt_path.png",
     )
 
