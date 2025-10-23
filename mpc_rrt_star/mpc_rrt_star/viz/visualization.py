@@ -182,6 +182,7 @@ def plot_prediction(
     *,
     ax: Optional[Axes] = None,
     vehicle_params: Optional[VehicleParams] = None,
+    control: Optional[FloatArray] = None,
 ) -> None:
     if predicted is None:
         return
@@ -246,8 +247,9 @@ def plot_prediction(
     vehicle_shape: List[object] = artists.get("vehicle_shape", [])
     for artist in vehicle_shape:
         artist.remove()
+    steer = float(control[1]) if control is not None and control.size >= 2 else 0.0
     artists["vehicle_shape"] = draw_vehicle(
-        state[0], state[1], state[2], 0.0, params, ax=axis, color="blue"
+        state[0], state[1], state[2], steer, params, ax=axis, color="blue"
     )
 
     axis.set_xlim(0, occupancy.shape[1])

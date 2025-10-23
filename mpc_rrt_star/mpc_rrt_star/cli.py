@@ -118,6 +118,7 @@ def run_pipeline(config: PipelineConfig, *, visualize: bool = True) -> Tuple[Pla
                 config.viz.prediction_pause,
                 ax=axis,
                 vehicle_params=vehicle_params,
+                control=u0,
             )
             if recorder and axis is not None:
                 recorder.capture(axis.figure)
