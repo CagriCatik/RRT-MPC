@@ -181,6 +181,7 @@ def plot_prediction(
     pause_s: float,
     *,
     ax: Optional[Axes] = None,
+    vehicle_params: Optional[VehicleParams] = None,
 ) -> None:
     if predicted is None:
         return
@@ -205,10 +206,13 @@ def plot_prediction(
             path_line.set_data(pts[:, 0], pts[:, 1])
             path_line.set_visible(True)
 
-    vehicle_params = artists.get("vehicle_params")
-    if vehicle_params is None:
-        vehicle_params = VehicleParams()
+    if vehicle_params is not None:
         artists["vehicle_params"] = vehicle_params
+
+    params = artists.get("vehicle_params")
+    if params is None:
+        params = VehicleParams()
+        artists["vehicle_params"] = params
 
     predicted_line = artists.get("predicted_line")
     if predicted_line is None:
@@ -243,7 +247,7 @@ def plot_prediction(
     for artist in vehicle_shape:
         artist.remove()
     artists["vehicle_shape"] = draw_vehicle(
-        state[0], state[1], state[2], 0.0, vehicle_params, ax=axis, color="blue"
+        state[0], state[1], state[2], 0.0, params, ax=axis, color="blue"
     )
 
     axis.set_xlim(0, occupancy.shape[1])
@@ -265,6 +269,7 @@ def animate_vehicle_states(
     color: str = "blue",
     delay: float = 0.03,
     ax: Optional[Axes] = None,
+    vehicle_params: Optional[VehicleParams] = None,
 ) -> None:
     plt = _get_pyplot()
 
@@ -274,7 +279,7 @@ def animate_vehicle_states(
         axis.set_xlim(0, occupancy.shape[1])
         axis.set_ylim(0, occupancy.shape[0])
 
-    params = VehicleParams()
+    params = vehicle_params or VehicleParams()
     previous: List[object] = []
     for idx, state in enumerate(states):
         for artist in previous:

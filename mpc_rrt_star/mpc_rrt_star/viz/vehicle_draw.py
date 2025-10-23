@@ -39,6 +39,30 @@ class VehicleParams:
 
         return self.length - self.back_to_wheel
 
+    @classmethod
+    def from_wheelbase(cls, wheelbase: float) -> "VehicleParams":
+        """Scale the reference geometry so the wheelbase matches ``wheelbase``.
+
+        The default dimensions describe the compact planar vehicle shared by
+        the user, with a reference wheelbase of 0.3 units. This helper scales
+        the footprint proportionally so it can be expressed directly in the
+        pixel space used by the simulator (typically metres divided by map
+        resolution).
+        """
+
+        base = cls()
+        if math.isclose(base.wheelbase, 0.0):  # pragma: no cover - defensive
+            raise ValueError("Reference vehicle geometry has zero wheelbase")
+        scale = wheelbase / base.wheelbase
+        return cls(
+            length=base.length * scale,
+            width=base.width * scale,
+            back_to_wheel=base.back_to_wheel * scale,
+            wheel_length=base.wheel_length * scale,
+            wheel_width=base.wheel_width * scale,
+            tread=base.tread * scale,
+        )
+
 
 def _rot(theta: float) -> np.ndarray:
     c = math.cos(theta)

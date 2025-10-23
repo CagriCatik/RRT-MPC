@@ -19,6 +19,7 @@ from .maps.io import load_grayscale, save_grayscale
 from .planning.plan_result import PlanResult
 from .planning.rrt_star import RRTStarPlanner
 from .viz.record import FrameRecorder
+from .viz.vehicle_draw import VehicleParams
 from .viz.visualization import configure_backend, plot_prediction, plot_rrt_star
 from .control.vehicle_model import f_discrete
 
@@ -69,6 +70,7 @@ def run_pipeline(config: PipelineConfig, *, visualize: bool = True) -> Tuple[Pla
         )
 
     wheelbase_px = config.mpc.wheelbase_m / config.map.map_resolution
+    vehicle_params = VehicleParams.from_wheelbase(wheelbase_px)
     controller = MPCController(config.mpc.to_parameters(config.map.map_resolution))
 
     if len(path) > 1:
@@ -115,6 +117,7 @@ def run_pipeline(config: PipelineConfig, *, visualize: bool = True) -> Tuple[Pla
                 step,
                 config.viz.prediction_pause,
                 ax=axis,
+                vehicle_params=vehicle_params,
             )
             if recorder and axis is not None:
                 recorder.capture(axis.figure)
