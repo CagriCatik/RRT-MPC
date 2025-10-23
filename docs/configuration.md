@@ -70,9 +70,10 @@ planner:
 ```
 
 `algorithm` selects the planner implementation. When set to `rrt_star`, the
-remaining fields map directly to `PlannerParameters`. When set to `rrt`, the
-`rrt_*` fields configure the rectangular-world planner and its smoothing
-behaviour. Both planners honour deterministic seeds for reproducible runs.
+remaining fields map directly to `PlannerParameters`. The `rrt_*` fields
+configure the rectangular-world planner and also control the Catmull-Rom
+post-processing that now runs on every successful plan. Both planners honour
+deterministic seeds for reproducible runs.
 
 Runtime overrides can be applied without editing YAML by constructing
 `PipelineConfig.from_dict({...})` and merging dictionaries. This is useful when

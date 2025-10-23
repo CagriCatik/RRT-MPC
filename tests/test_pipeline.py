@@ -37,3 +37,6 @@ def test_orchestrator_runs_without_visualisation(tmp_path) -> None:
 
     assert result.plan.success
     assert len(result.states) > 0
+    assert result.plan.smoothed_path is not None
+    assert len(result.plan.smoothed_path) >= len(result.plan.raw_path)
+    assert list(result.plan.smoothed_path) == result.plan.path

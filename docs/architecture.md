@@ -93,9 +93,10 @@ flowchart LR
 2. **Map Preparation** uses `MapStage` to optionally generate a synthetic map,
    inflate obstacles and construct a binary occupancy grid.
 3. **Planning** runs inside `PlanningStage`, selecting between `RRTStarPlanner`
-   or the rectangular `RRTPlanner` based on configuration and returning a
-   `PlanResult` containing the path (raw, pruned and optionally smoothed) and
-   exploration tree.
+   or the rectangular `RRTPlanner` based on configuration. The stage now
+   applies Catmull-Rom smoothing to the returned waypoints (reusing the planner
+   spline settings) and packages the raw and smoothed variants into the
+   `PlanResult` alongside the exploration tree.
 4. **Reference Building & Control** happens inside `TrajectoryTracker`, which
    converts the geometric path into an MPC reference, solves the QP with
    recovery logic, and integrates the vehicle model forward in time.
