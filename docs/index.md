@@ -15,6 +15,8 @@ tuning strategies.
   determinism guarantees.
 - [Pipeline Usage](usage_pipeline.md) – running the end-to-end system from CLI
   and Python APIs.
+- [Pipeline Integration](system_integration.md) – end-to-end sequencing, data
+  contracts and MPC/RRT* interaction notes.
 - [Configuration](configuration.md) – YAML schema, defaults and override tips.
 - [Developer Guide](developer_guide.md) – contribution workflow and extension points.
 
