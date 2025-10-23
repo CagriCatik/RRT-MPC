@@ -31,15 +31,15 @@ LOG = logging.getLogger("main_mpc")
 CONFIG = {
     "map_file": "occupancy_grid_inflated.png",
     "inflated_map_file": "occupancy_grid_inflated.png",
-    "map_resolution": 0.2,       # m/pixel
+    "map_resolution": 0.8,       # m/pixel
     "inflation_radius_m": 0.6,
-    "start": (50, 50),
-    "goal_offset": (50, 50),
+    "start": (70, 70),
+    "goal_offset": (10, 10),
     # RRT*
-    "step_size": 10,
+    "step_size": 5,
     "goal_radius": 15,
     "max_iterations": 3000,
-    "rewire_radius": 25,
+    "rewire_radius": 15,
     "goal_sample_rate": 0.1,
     # MPC (robust defaults)
     "WB_m": 2.8,
