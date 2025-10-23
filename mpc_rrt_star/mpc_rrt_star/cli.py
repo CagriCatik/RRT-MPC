@@ -19,7 +19,7 @@ from .maps.io import load_grayscale, save_grayscale
 from .planning.plan_result import PlanResult
 from .planning.rrt_star import RRTStarPlanner
 from .viz.record import FrameRecorder
-from .viz.visualization import animate_vehicle_states, configure_backend, plot_prediction, plot_rrt_star
+from .viz.visualization import configure_backend, plot_prediction, plot_rrt_star
 from .control.vehicle_model import f_discrete
 
 LOG = get_logger(__name__)
@@ -53,8 +53,20 @@ def run_pipeline(config: PipelineConfig, *, visualize: bool = True) -> Tuple[Pla
     if not path:
         raise RuntimeError("Empty path returned from planner")
 
-    if visualize and config.viz.animate_tree:
-        plot_rrt_star(occupancy, start, goal, plan_result, show_tree=True, save_path="rrtstar_path.png")
+    axis = None
+    if visualize:
+        import matplotlib.pyplot as plt
+
+        plt.ion()
+        axis = plot_rrt_star(
+            occupancy,
+            start,
+            goal,
+            plan_result,
+            show_tree=config.viz.animate_tree,
+            save_path="rrtstar_path.png" if config.viz.animate_tree else None,
+            keep_open=True,
+        )
 
     wheelbase_px = config.mpc.wheelbase_m / config.map.map_resolution
     controller = MPCController(config.mpc.to_parameters(config.map.map_resolution))
@@ -70,12 +82,6 @@ def run_pipeline(config: PipelineConfig, *, visualize: bool = True) -> Tuple[Pla
     states: list[FloatArray] = []
 
     recorder = FrameRecorder(config.viz.record_dir) if (visualize and config.viz.record_frames) else None
-    if visualize:
-        import matplotlib.pyplot as plt
-
-        plt.ion()
-        plt.figure(figsize=(7, 7))
-
     path_idx = 0
     for step in range(config.mpc.sim_steps):
         end = min(path_idx + controller.params.horizon + 1, len(ref_global))
@@ -101,9 +107,17 @@ def run_pipeline(config: PipelineConfig, *, visualize: bool = True) -> Tuple[Pla
                 break
 
         if visualize:
-            plot_prediction(occupancy, path, Xp, state, step, config.viz.prediction_pause)
-            if recorder:
-                recorder.capture()
+            plot_prediction(
+                occupancy,
+                path,
+                Xp,
+                state,
+                step,
+                config.viz.prediction_pause,
+                ax=axis,
+            )
+            if recorder and axis is not None:
+                recorder.capture(axis.figure)
 
         state = f_discrete(state, u0, controller.params.dt, wheelbase_px)
         states.append(state.copy())
@@ -123,8 +137,6 @@ def run_pipeline(config: PipelineConfig, *, visualize: bool = True) -> Tuple[Pla
         import matplotlib.pyplot as plt
 
         plt.ioff()
-        if states:
-            animate_vehicle_states(occupancy, states, color="blue", delay=0.02)
 
     return plan_result, states
 

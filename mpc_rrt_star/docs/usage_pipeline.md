@@ -29,6 +29,8 @@ command line and Python API.
    ```
 
 Pass a configuration file with `--config custom.yaml` to override defaults.
+The live visualisation overlays the RRT* tree, global path, MPC horizon and vehicle
+footprint in a single figure so you can track planning and control progress together.
 
 ## Python API
 

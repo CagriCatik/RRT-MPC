@@ -123,7 +123,8 @@ See [`docs/configuration.md`](docs/configuration.md) for a complete reference.
    ```
 
 During the run the package renders the RRT* tree, planned path, MPC predictions and the
-tracked vehicle states. For headless environments set ``viz.backend`` to ``Agg``.
+tracked vehicle states within a single live Matplotlib figure, so all elements remain
+aligned on-screen. For headless environments set ``viz.backend`` to ``Agg``.
 
 ## Documentation
 
