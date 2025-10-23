@@ -1,9 +1,6 @@
-# MPC RRT* Motion Planning Framework
+# RRT* MPC Motion Planning Framework
 
-A production-ready Python package that combines deterministic RRT* global path planning
-with a curvature-aware Model Predictive Controller (MPC) for vehicle tracking. The code
-base started as an academic prototype and has been refactored into a modular
-architecture with clear interfaces, documentation, and automated tests.
+A modular Python framework integrating deterministic RRT* for global path planning with a curvature-aware Model Predictive Controller (MPC) for precise vehicle tracking. Initially developed as an academic prototype, the project has been restructured into a maintainable and testable architecture featuring well-defined interfaces, comprehensive documentation, and automated test coverage. It serves as a foundation for research and prototyping in autonomous motion planning rather than a production-grade implementation.
 
 ## Key capabilities
 
@@ -147,5 +144,3 @@ loading. Continuous integration can extend this with linting and static analysis
 - [`docs/usage_pipeline.md`](docs/usage_pipeline.md) – step-by-step tutorial for
   configuring and running the full stack.
 - [`docs/architecture.md`](docs/architecture.md) – detailed diagrams and data flow.
-
-For enquiries please contact the maintainers at `research@example.com`.
