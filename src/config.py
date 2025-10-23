@@ -11,10 +11,8 @@ import numpy as np
 from .logging_setup import get_logger
 from .planning.rrt import RRTParameters
 from .planning.rrt_star import PlannerParameters
-
-if TYPE_CHECKING:  # pragma: no cover - imported only for type checking
-    from .control.mpc_controller import MPCParameters
-
+from .control.mpc_controller import MPCParameters
+    
 LOG = get_logger(__name__)
 
 
@@ -23,27 +21,27 @@ class MapConfig:
     map_file: str = "maps/occupancy_grid.png"
     inflated_map_file: str = "maps/occupancy_grid_inflated.png"
     map_resolution: float = 0.8
-    inflation_radius_m: float = 0.6
+    inflation_radius_m: float = 0.5
     start: Tuple[int, int] = (70, 70)
-    goal_offset: Tuple[int, int] = (60, 60)
+    goal_offset: Tuple[int, int] = (70, 70)
     generate: bool = False
     size_m: Tuple[float, float] = (80.0, 80.0)
     generator_resolution: float = 1.0
     generator_seed: int = 4
     rect_obstacles: Tuple[Tuple[float, float, float, float], ...] = ()
-    rect_inflation_radius: float = 0.0
+    rect_inflation_radius: float = 0.1
 
 
 @dataclass
 class PlannerConfig:
     algorithm: str = "rrt_star"
-    step_size: float = 5.0
+    step_size: float = 3.0
     goal_radius: float = 10.0
     max_iterations: int = 2000
-    rewire_radius: float = 15.0
+    rewire_radius: float = 20.0
     goal_sample_rate: float = 0.1
     random_seed: int = 13
-    rrt_step: float = 3.0
+    rrt_step: float = 1.0
     rrt_goal_sample_rate: float = 0.07
     rrt_max_iterations: int = 15_000
     rrt_goal_tolerance: float = 4.0
@@ -83,7 +81,7 @@ class PlannerConfig:
 class MPCConfig:
     wheelbase_m: float = 2.8
     dt: float = 0.1
-    horizon: int = 8
+    horizon: int = 15
     v_px_s: float = 15.0
     sim_steps: int = 300
     q: Tuple[Tuple[float, float, float, float], ...] = ((4.0, 0.0, 0.0, 0.0), (0.0, 4.0, 0.0, 0.0), (0.0, 0.0, 0.6, 0.0), (0.0, 0.0, 0.0, 0.1))
@@ -112,7 +110,7 @@ class MPCConfig:
 @dataclass
 class VizConfig:
     backend: str = "auto"
-    prediction_pause: float = 0.05
+    prediction_pause: float = 0.01
     animate_tree: bool = True
     record_frames: bool = False
     record_dir: str = "frames"

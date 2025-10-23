@@ -8,6 +8,7 @@ import matplotlib
 from matplotlib import rcsetup
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 import numpy as np
 
 from ..common.types import FloatArray, Path
@@ -29,12 +30,6 @@ def _backend_supports_interaction() -> bool:
     return backend in _INTERACTIVE_BACKENDS
 
 
-def _get_pyplot():
-    import matplotlib.pyplot as plt
-
-    return plt
-
-
 def _warn_once(message: str) -> None:
     if getattr(_warn_once, "_emitted", False):
         return
@@ -49,40 +44,25 @@ def configure_backend(backend: str) -> None:
             return
         original = matplotlib.get_backend()
         for candidate in rcsetup.interactive_bk:
-            try:
-                matplotlib.use(candidate, force=True)
-            except Exception:  # pragma: no cover - backend availability is environment specific
-                continue
+            matplotlib.use(candidate, force=True)
             if _backend_supports_interaction():
                 LOG.info(
                     "Using Matplotlib backend '%s' for interactive display.",
                     matplotlib.get_backend(),
                 )
                 return
-        try:
-            matplotlib.use(original, force=True)
-        except Exception:  # pragma: no cover - fallback should rarely fail
-            pass
+        matplotlib.use(original, force=True)
         if not _backend_supports_interaction():
             LOG.info(
                 "No interactive Matplotlib backend detected; continuing with '%s'.",
                 matplotlib.get_backend(),
             )
         return
-    try:
-        matplotlib.use(backend, force=True)
-        LOG.info("Configured Matplotlib backend '%s'.", matplotlib.get_backend())
-    except Exception as exc:
-        LOG.warning(
-            "Failed to set Matplotlib backend to '%s': %s. Using '%s'.",
-            backend,
-            exc,
-            matplotlib.get_backend(),
-        )
+    matplotlib.use(backend, force=True)
+    LOG.info("Configured Matplotlib backend '%s'.", matplotlib.get_backend())
 
 
 def _prepare_axis(ax: Optional[Axes]) -> tuple[Figure, Axes, bool]:
-    plt = _get_pyplot()
     if ax is None:
         fig, axis = plt.subplots(figsize=(7, 7))
         created = True
@@ -117,12 +97,10 @@ def plot_rrt_star(
     ax: Optional[Axes] = None,
     keep_open: bool = False,
 ) -> Axes:
-    plt = _get_pyplot()
-
     fig, axis, created = _prepare_axis(ax)
     axis.imshow(occupancy, cmap="gray", origin="lower")
-    axis.plot(start[0], start[1], "bo", label="Start")
-    axis.plot(goal[0], goal[1], "ro", label="Goal")
+    axis.plot(start[0], start[1], "blue", marker="o", linestyle="None", label="Start")
+    axis.plot(goal[0], goal[1], "red", marker="o", linestyle="None", label="Goal")
 
     if show_tree:
         label = "Tree"
@@ -188,7 +166,6 @@ def plot_prediction(
 ) -> None:
     if predicted is None:
         return
-    plt = _get_pyplot()
 
     axis = ax if ax is not None else plt.gca()
     artists: Dict[str, object] = getattr(axis, "_prediction_artists", {})  # type: ignore[attr-defined]
@@ -256,7 +233,7 @@ def plot_prediction(
 
     axis.set_xlim(0, occupancy.shape[1])
     axis.set_ylim(0, occupancy.shape[0])
-    axis.set_title(f"RRT* Planning & MPC Tracking — step {step_idx}")
+    axis.set_title(f"RRT* Planning & MPC Tracking - step {step_idx}")
     axis._prediction_artists = artists  # type: ignore[attr-defined]
     _update_legend(axis)
 
@@ -275,8 +252,6 @@ def animate_vehicle_states(
     ax: Optional[Axes] = None,
     vehicle_params: Optional[VehicleParams] = None,
 ) -> None:
-    plt = _get_pyplot()
-
     fig, axis, created = _prepare_axis(ax)
     if created:
         axis.imshow(occupancy, cmap="gray", origin="lower")
@@ -289,7 +264,7 @@ def animate_vehicle_states(
         for artist in previous:
             artist.remove()
         previous = draw_vehicle(state[0], state[1], state[2], 0.0, params, ax=axis, color=color)
-        axis.set_title(f"Vehicle replay — frame {idx}")
+        axis.set_title(f"Vehicle replay - frame {idx}")
         if _backend_supports_interaction():
             axis.figure.canvas.draw_idle()
             axis.figure.canvas.flush_events()

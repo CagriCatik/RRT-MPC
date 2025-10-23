@@ -5,15 +5,10 @@ from pathlib import Path
 from typing import Optional, Sequence
 
 import imageio.v2 as imageio
+import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 
 from ..common.paths import resolve_plot_dir, resolve_plot_path
-
-
-def _get_pyplot():
-    import matplotlib.pyplot as plt
-
-    return plt
 
 
 class FrameRecorder:
@@ -25,7 +20,6 @@ class FrameRecorder:
         self.counter = 0
 
     def capture(self, figure: Optional[Figure] = None) -> Path:
-        plt = _get_pyplot()
         fig = figure if figure is not None else plt.gcf()
         path = self.directory / f"{self.prefix}_{self.counter:05d}.png"
         fig.savefig(path, bbox_inches="tight", dpi=150)
@@ -34,8 +28,7 @@ class FrameRecorder:
 
 
 def assemble_gif(frame_paths: Sequence[Path], output: str | Path, *, duration: float = 0.05) -> Path:
-    """Combine ``frame_paths`` into a GIF saved under ``plots``."""
-
+    """Combine `frame_paths` into a GIF saved under `plots`."""
     ordered = list(sorted(frame_paths))
     if not ordered:
         raise ValueError("No frames provided for GIF assembly")
