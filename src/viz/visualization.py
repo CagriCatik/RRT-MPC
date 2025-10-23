@@ -11,6 +11,7 @@ from matplotlib.figure import Figure
 import numpy as np
 
 from ..common.types import FloatArray, Path
+from ..common.paths import resolve_plot_path
 from ..logging_setup import get_logger
 from ..planning.plan_result import PlanResult
 from .vehicle_draw import VehicleParams, draw_vehicle
@@ -102,7 +103,7 @@ def _update_legend(ax: Axes) -> None:
             continue
         unique[label] = handle
     if unique:
-        ax.legend(list(unique.values()), list(unique.keys()), loc="upper right")
+        ax.legend(list(unique.values()), list(unique.keys()), loc="lower right")
 
 
 def plot_rrt_star(
@@ -153,7 +154,8 @@ def plot_rrt_star(
     axis._prediction_artists = artists  # type: ignore[attr-defined]
 
     if save_path is not None:
-        fig.savefig(save_path, bbox_inches="tight", dpi=200)
+        output = resolve_plot_path(save_path)
+        fig.savefig(output, bbox_inches="tight", dpi=200)
     if created:
         if _backend_supports_interaction():
             if not keep_open:

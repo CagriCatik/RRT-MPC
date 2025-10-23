@@ -5,6 +5,8 @@ Live plotting for RRT and RRT* algorithms + vehicle animation.
 """
 
 import time
+from pathlib import Path
+
 import numpy as np
 import matplotlib
 matplotlib.use("TkAgg")
@@ -34,7 +36,11 @@ def visualize_rrt_star(occ, start, goal, nodes, goal_node, delay=0.001, save_pat
 
     plt.ioff()
     if save_path:
-        plt.savefig(save_path, bbox_inches="tight", dpi=200)
+        path = Path(save_path)
+        if not path.is_absolute():
+            path = Path("plots") / path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(path, bbox_inches="tight", dpi=200)
     plt.show()
     return path
 

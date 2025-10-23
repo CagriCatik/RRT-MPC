@@ -15,6 +15,7 @@ v_{k+1} &= v_k + \Delta t\, a_k.
 \]
 
 The controller linearises the dynamics around the current reference window
+
 \((\bar{x}_k, \bar{u}_k)\) to obtain
 
 \[
@@ -22,8 +23,9 @@ X_{k+1} = A_k X_k + B_k U_k + c_k,
 \]
 
 where \(A_k = \partial f / \partial x\), \(B_k = \partial f / \partial u\) and
-\(c_k = f(\bar{x}_k, \bar{u}_k) - A_k \bar{x}_k - B_k \bar{u}_k\). Forward
-Euler discretisation is sufficient at the 0.1 s time step used in this project.
+\(c_k = f(\bar{x}_k, \bar{u}_k) - A_k \bar{x}_k - B_k \bar{u}_k\). 
+
+Forward Euler discretisation is sufficient at the 0.1 s time step used in this project.
 
 ## Optimisation Problem
 
@@ -33,6 +35,7 @@ At each time step the controller solves
 \min_{X,U,s} \sum_{k=0}^{N-1} \left[(X_k - X_k^{\mathrm{ref}})^T Q (X_k - X_k^{\mathrm{ref}}) + U_k^T R U_k\right] + (X_N - X_N^{\mathrm{ref}})^T Q_N (X_N - X_N^{\mathrm{ref}}) \\
 + w_v \sum_{k=0}^{N} s_{v,k}^2 + w_u \sum_{k=0}^{N-1} \lVert s_{u,k} \rVert_2^2 + w_{\Delta u} \sum_{k=0}^{N-1} \lVert s_{\Delta u,k} \rVert_2^2
 \]
+
 subject to
 
 \[

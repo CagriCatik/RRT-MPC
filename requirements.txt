@@ -1,0 +1,36 @@
+# Core scientific and optimization stack
+numpy>=1.24,<3.0
+matplotlib>=3.7,<4.0
+opencv-python>=4.8,<5.0
+imageio>=2.31,<3.0
+cvxpy>=1.4,<2.0
+osqp>=0.6.5
+ecos>=2.0.12
+scs>=3.2.0
+click>=8.1,<9.0
+PyYAML>=6.0,<7.0
+
+# Optional: headless OpenCV for CI servers or container builds
+# opencv-python-headless>=4.8,<5.0
+
+# Testing and development tools
+pytest>=7.4,<9.0
+pytest-cov>=4.1,<6.0
+mypy>=1.8,<2.0
+ruff>=0.1.14,<1.0.0
+black>=23.12,<25.0
+
+# Documentation stack for MkDocs Material
+mkdocs-material>=9.5,<10.0
+pymdown-extensions>=10.3,<11.0
+mkdocs-minify-plugin>=0.7,<1.0
+mkdocs-git-revision-date-localized-plugin>=1.2,<2.0
+
+# Math rendering and diagrams
+# MathJax is loaded via CDN in mkdocs.yml
+# Mermaid is also loaded via CDN; no Python dependency needed
+
+# Deployment
+# Required for GitHub Pages automatic builds
+setuptools>=69
+wheel>=0.42

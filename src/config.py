@@ -2,23 +2,25 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from importlib import import_module
 from pathlib import Path
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Tuple, Type, TYPE_CHECKING
 
 import numpy as np
-import yaml
 
-from .control.mpc_controller import MPCParameters
 from .logging_setup import get_logger
 from .planning.rrt_star import PlannerParameters
+
+if TYPE_CHECKING:  # pragma: no cover - imported only for type checking
+    from .control.mpc_controller import MPCParameters
 
 LOG = get_logger(__name__)
 
 
 @dataclass
 class MapConfig:
-    map_file: str = "occupancy_grid.png"
-    inflated_map_file: str = "occupancy_grid_inflated.png"
+    map_file: str = "maps/occupancy_grid.png"
+    inflated_map_file: str = "maps/occupancy_grid_inflated.png"
     map_resolution: float = 0.8
     inflation_radius_m: float = 0.6
     start: Tuple[int, int] = (70, 70)
@@ -64,8 +66,9 @@ class MPCConfig:
     du_bounds: Tuple[Tuple[float, float], Tuple[float, float]] = ((-12.0, 12.0), (-0.15, 0.15))
 
     def to_parameters(self, map_resolution: float) -> MPCParameters:
+        mpc_parameters_cls = _load_mpc_parameters()
         wb_px = self.wheelbase_m / map_resolution
-        return MPCParameters(
+        return mpc_parameters_cls(
             wheelbase_px=wb_px,
             dt=self.dt,
             horizon=self.horizon,
@@ -112,6 +115,13 @@ class PipelineConfig:
 
 
 def load_config(path: str | Path) -> PipelineConfig:
+    try:
+        yaml = import_module("yaml")
+    except ModuleNotFoundError as exc:  # pragma: no cover - dependency missing only in CI
+        raise RuntimeError(
+            "PyYAML is required to load configuration files. Install it with 'pip install pyyaml'."
+        ) from exc
+
     with open(path, "r", encoding="utf8") as fh:
         data = yaml.safe_load(fh) or {}
     cfg = PipelineConfig.from_dict(data)
@@ -119,5 +129,20 @@ def load_config(path: str | Path) -> PipelineConfig:
     return cfg
 
 
+def _load_mpc_parameters() -> Type["MPCParameters"]:
+    try:
+        module = import_module("src.control.mpc_controller")
+    except ModuleNotFoundError as exc:  # pragma: no cover - dependency missing only in CI
+        raise RuntimeError(
+            "cvxpy is required for the MPC controller. Install it with 'pip install cvxpy'."
+        ) from exc
+    return module.MPCParameters
+
+
 def default_config() -> PipelineConfig:
-    return PipelineConfig(map=MapConfig(), planner=PlannerConfig(), mpc=MPCConfig(), viz=VizConfig())
+    return PipelineConfig(
+        map=MapConfig(),
+        planner=PlannerConfig(),
+        mpc=MPCConfig(),
+        viz=VizConfig(),
+    )

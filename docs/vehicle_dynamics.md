@@ -7,7 +7,7 @@ occupancy grid resolution \(r\) (metres per pixel), yielding \(L_{px} = L / r\).
 ## Continuous-Time Model
 
 With state \(x = [x, y, \psi, v]^T\) and inputs \(u = [a, \delta]^T\), the
-continuous dynamics are
+continuous dynamics are:
 
 \[
 \dot{x} = v \cos \psi, \quad
