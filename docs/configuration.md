@@ -50,30 +50,26 @@ runs reuse the cached image unless `generate` stays true.
 
 ```yaml
 planner:
-  algorithm: rrt_star  # or "rrt"
+  algorithm: rrt_star
   step_size: 10.0
   goal_radius: 15.0
   max_iterations: 3000
   rewire_radius: 25.0
   goal_sample_rate: 0.1
   random_seed: 13
-  rrt_step: 3.0
-  rrt_goal_sample_rate: 0.07
-  rrt_max_iterations: 15000
-  rrt_goal_tolerance: 4.0
   rrt_collision_step: 0.75
-  rrt_rng_seed: 7
   rrt_prune_path: true
   rrt_spline_samples: 20
   rrt_spline_alpha: 0.5
   rrt_dedupe_tolerance: 1.0e-9
 ```
 
-`algorithm` selects the planner implementation. When set to `rrt_star`, the
-remaining fields map directly to `PlannerParameters`. The `rrt_*` fields
-configure the rectangular-world planner and also control the Catmull-Rom
-post-processing that now runs on every successful plan. Both planners honour
-deterministic seeds for reproducible runs.
+`algorithm` selects the planner implementation. The pipeline now always
+executes the RRT* planner; non-`rrt_star` values are preserved for backwards
+compatibility but fall back with a warning. The remaining fields map directly to
+`PlannerParameters`, including the Catmull-Rom smoothing controls that run on
+every successful plan. All parameters honour deterministic seeds for
+reproducible runs.
 
 Runtime overrides can be applied without editing YAML by constructing
 `PipelineConfig.from_dict({...})` and merging dictionaries. This is useful when

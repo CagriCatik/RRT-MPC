@@ -1,6 +1,6 @@
 # Pipeline Integration Deep Dive
 
-This document connects the RRT*/RRT global planner with the MPC-based tracker by
+This document connects the RRT* global planner with the MPC-based tracker by
 walking through the runtime hand-off points, contracts, and numerical
 considerations encoded in the source code. Use it when embedding the pipeline in
 research experiments or when swapping out individual components.
@@ -17,13 +17,12 @@ research experiments or when swapping out individual components.
 3. **Map preparation** – `MapStage.build()` guarantees that a grayscale map
    exists (regenerating it via `maps.generator.MapGenerator` when requested),
    inflates obstacles, and returns a `MapArtifacts` dataclass bundling the
-   occupancy grid, start/goal pose, rectangular obstacle approximations, and
-   workspace extents for planners operating in continuous space.
-4. **Planning** – `PlanningStage.plan()` chooses between `planning.rrt_star.RRTStarPlanner`
-   (grid-based) or `planning.rrt.RRTPlanner` (axis-aligned rectangles). It wraps
-   the resulting `PlanResult` inside `PlanningArtifacts` and applies optional
-   Catmull-Rom smoothing so the control stage receives curvature-aware waypoints
-   without extra pre-processing.
+   occupancy grid, start/goal pose, inflation masks, and workspace extents for
+   planners operating in continuous space.
+4. **Planning** – `PlanningStage.plan()` executes `planning.rrt_star.RRTStarPlanner`
+   on the inflated occupancy grid. It wraps the resulting `PlanResult` inside
+   `PlanningArtifacts` and applies optional Catmull-Rom smoothing so the control
+   stage receives curvature-aware waypoints without extra pre-processing.
 5. **Tracking** – `TrajectoryTracker.track()` converts the selected path into an
    MPC reference using `control.ref_builder.build_reference`, solves the MPC via
    `control.mpc_controller.MPCController`, and optionally streams prediction
@@ -35,9 +34,9 @@ research experiments or when swapping out individual components.
 
 ## Planner/Controller Interface
 
-- `MapArtifacts` exposes both discrete (occupancy grid) and continuous
-  representations (workspace bounds, inflated rectangles). RRT* consumes the grid
-  directly, while the rectangular RRT variant uses the bounds and obstacle list.
+- `MapArtifacts` exposes both discrete (raw and inflated occupancy grids) and
+  continuous representations (workspace bounds). RRT* consumes the inflated grid
+  directly, while the inflation mask supports richer visualisation overlays.
 - `PlanResult.path` is guaranteed to contain the smoothed trajectory when
   available. `PlanResult.raw_path` remains accessible, giving numerical
   experiments access to the unsmoothed exploration tree.
@@ -67,7 +66,7 @@ research experiments or when swapping out individual components.
 ## Determinism & Scaling Considerations
 
 - Planning and map generation use explicit RNG seeds (`PlannerConfig.random_seed`,
-  `PlannerConfig.rrt_rng_seed`, `MapConfig.generator_seed`), ensuring identical
+  `MapConfig.generator_seed`), ensuring identical
   trees and maps across runs when input parameters match.
 - NumPy-based occupancy inflation and reference construction avoid Python loops,
   keeping per-step latency low as map resolution increases.

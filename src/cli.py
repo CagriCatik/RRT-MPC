@@ -75,6 +75,7 @@ def plan_path_cmd(config: PipelineConfig) -> None:
         maps.goal,
         planning.plan,
         show_tree=True,
+        inflation_mask=maps.inflation_mask,
         save_path="planner/rrtstar_path.png",
     )
 

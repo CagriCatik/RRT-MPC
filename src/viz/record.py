@@ -4,7 +4,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional, Sequence
 
-import imageio.v2 as imageio
+try:  # pragma: no cover - optional dependency
+    import imageio.v2 as imageio
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    imageio = None  # type: ignore[assignment]
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 
@@ -32,6 +35,8 @@ def assemble_gif(frame_paths: Sequence[Path], output: str | Path, *, duration: f
     ordered = list(sorted(frame_paths))
     if not ordered:
         raise ValueError("No frames provided for GIF assembly")
+    if imageio is None:
+        raise RuntimeError("imageio is required to assemble GIFs. Install it via 'pip install imageio'.")
     images = [imageio.imread(path) for path in ordered]
     destination = resolve_plot_path(output)
     imageio.mimsave(destination, images, duration=duration)

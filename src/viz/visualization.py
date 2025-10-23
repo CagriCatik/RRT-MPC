@@ -5,7 +5,7 @@ from pathlib import Path as FilePath
 from typing import Dict, List, Optional, Sequence
 
 import matplotlib
-from matplotlib import rcsetup
+from matplotlib import colors as mcolors, rcsetup
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
@@ -93,12 +93,26 @@ def plot_rrt_star(
     result: PlanResult,
     *,
     show_tree: bool = True,
+    inflation_mask: Optional[np.ndarray] = None,
     save_path: Optional[str | FilePath] = None,
     ax: Optional[Axes] = None,
     keep_open: bool = False,
 ) -> Axes:
     fig, axis, created = _prepare_axis(ax)
-    axis.imshow(occupancy, cmap="gray", origin="lower")
+    base_image = axis.imshow(occupancy, cmap="gray", origin="lower")
+    base_image.set_label("Occupancy")
+
+    if inflation_mask is not None and inflation_mask.size:
+        masked = np.ma.masked_where(~inflation_mask.astype(bool), inflation_mask)
+        cmap = mcolors.ListedColormap([(0.0, 0.0, 0.0, 0.0), "#ffcc66"])
+        inflated_image = axis.imshow(
+            masked,
+            cmap=cmap,
+            origin="lower",
+            alpha=0.6,
+            interpolation="nearest",
+        )
+        inflated_image.set_label("Inflated Obstacle")
     axis.plot(start[0], start[1], "blue", marker="o", linestyle="None", label="Start")
     axis.plot(goal[0], goal[1], "red", marker="o", linestyle="None", label="Goal")
 

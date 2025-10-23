@@ -25,10 +25,10 @@ flowchart LR
 ### `pipeline`
 
 - **map_stage.py** – encapsulates map generation, inflation and start/goal
-  derivation, returning immutable `MapArtifacts` that also capture workspace
-  bounds and optional rectangular obstacles for sampling-based planners.
-- **planning_stage.py** – wraps planner selection (`RRTStarPlanner` for grids or
-  `RRTPlanner` for rectangular worlds) and records the full `PlanResult`
+  derivation, returning immutable `MapArtifacts` that capture workspace bounds
+  together with both raw and inflated occupancy grids for sampling-based
+  planners.
+- **planning_stage.py** – wraps RRT* execution and records the full `PlanResult`
   alongside metadata.
 - **control_stage.py** – performs MPC roll-outs with a structured recovery
   strategy and optional visualisation hooks, yielding `TrackingResult`.
@@ -50,11 +50,8 @@ flowchart LR
 ### `planning`
 
 - **rrt_star.py** – deterministic RRT* with parent-indexed nodes (`PlanResult`).
-  Accepts a `PlannerParameters` dataclass to ensure reproducible seeds and
-  tunable metrics.
-- **rrt.py** – probabilistic RRT for rectangular obstacle worlds with optional
-  Catmull-Rom smoothing and shortcut pruning utilities. Exposes `RRTParameters`
-  for reproducible tuning.
+  Accepts a `PlannerParameters` dataclass to ensure reproducible seeds, tunable
+  metrics, and Catmull-Rom smoothing utilities.
 - **plan_result.py** – data structures for returning the final path, node list
   and metadata (iterations, goal index).
 
@@ -92,11 +89,10 @@ flowchart LR
    all parameters.
 2. **Map Preparation** uses `MapStage` to optionally generate a synthetic map,
    inflate obstacles and construct a binary occupancy grid.
-3. **Planning** runs inside `PlanningStage`, selecting between `RRTStarPlanner`
-   or the rectangular `RRTPlanner` based on configuration. The stage now
-   applies Catmull-Rom smoothing to the returned waypoints (reusing the planner
-   spline settings) and packages the raw and smoothed variants into the
-   `PlanResult` alongside the exploration tree.
+3. **Planning** runs inside `PlanningStage`, executing `RRTStarPlanner`. The
+   stage applies Catmull-Rom smoothing to the returned waypoints (reusing the
+   planner spline settings) and packages the raw, pruned, and smoothed variants
+   into the `PlanResult` alongside the exploration tree.
 4. **Reference Building & Control** happens inside `TrajectoryTracker`, which
    converts the geometric path into an MPC reference, solves the QP with
    recovery logic, and integrates the vehicle model forward in time.
@@ -112,13 +108,13 @@ stage, and provides a clear seam for future planners or controllers.
 1. `PipelineOrchestrator.run()` configures the Matplotlib backend, instantiates
    each stage with the loaded `PipelineConfig`, and measures wall-clock timings
    for observability.
-2. `MapStage.build()` produces immutable `MapArtifacts` that bundle the raw
-   occupancy grid, start/goal, rectangular obstacle approximations, and the
-   workspace extents used by planners operating in continuous space.
-3. `PlanningStage.plan()` selects the configured algorithm and returns a
-   `PlanningArtifacts` wrapper. The planner output is smoothed in-place so the
-   downstream controller receives curvature-aware waypoints without additional
-   work.
+2. `MapStage.build()` produces immutable `MapArtifacts` that bundle the raw and
+   inflated occupancy grids, start/goal, inflation masks, and the workspace
+   extents used by planners operating in continuous space.
+3. `PlanningStage.plan()` executes the configured algorithm (currently RRT*) and
+   returns a `PlanningArtifacts` wrapper. The planner output is smoothed
+   in-place so the downstream controller receives curvature-aware waypoints
+   without additional work.
 4. `TrajectoryTracker.track()` converts the plan into an MPC reference, runs the
    controller, and streams prediction frames to `viz.visualization` while
    recording them when requested. The method returns a `TrackingResult`
@@ -132,10 +128,10 @@ checklist when integrating the framework into external applications.
 
 ## Key Data Structures
 
-- **`MapArtifacts`** – immutable container for the inflated occupancy grid,
-  start/goal pair, workspace bounds, and (optionally) inflated rectangles used
-  by the axis-aligned RRT variant. It is always produced by `MapStage` before
-  any planner is invoked.
+- **`MapArtifacts`** – immutable container for the raw and inflated occupancy
+  grids, start/goal pair, workspace bounds, and inflation mask used for
+  visualisation. It is always produced by `MapStage` before any planner is
+  invoked.
 - **`PlanningArtifacts`** – lightweight wrapper around `PlanResult`, ensuring
   the orchestrator can extend metadata in the future without changing the stage
   contract.

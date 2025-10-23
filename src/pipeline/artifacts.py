@@ -8,7 +8,7 @@ import numpy as np
 
 from ..common.types import FloatArray
 from ..planning.plan_result import PlanResult
-from ..planning.rrt import Rect
+from ..planning.rrt_star import Rect
 
 
 @dataclass(frozen=True)
@@ -16,6 +16,8 @@ class MapArtifacts:
     """Occupancy-grid assets derived from the configured map."""
 
     occupancy: np.ndarray
+    raw_occupancy: np.ndarray
+    inflation_mask: np.ndarray
     start: Tuple[float, float]
     goal: Tuple[float, float]
     workspace: Tuple[Tuple[float, float], Tuple[float, float]] = ((0.0, 0.0), (0.0, 0.0))
