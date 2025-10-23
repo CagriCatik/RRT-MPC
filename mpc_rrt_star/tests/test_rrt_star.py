@@ -1,7 +1,6 @@
 import numpy as np
 
 from mpc_rrt_star.maps.generator import MapGenerator
-from mpc_rrt_star.planning.plan_result import PlanResult
 from mpc_rrt_star.planning.rrt_star import PlannerParameters, RRTStarPlanner
 
 

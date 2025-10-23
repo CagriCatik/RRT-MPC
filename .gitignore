@@ -108,3 +108,8 @@ ros_ws/log/
 *.old
 *.orig
 *.rej
+
+# Generated planning artifacts
+occupancy_grid*.png
+rrt*_path*.png
+frames/
