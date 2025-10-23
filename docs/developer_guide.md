@@ -21,9 +21,9 @@ and keep the prototype production-ready.
 The orchestration layer is intentionally declarative. The relevant entry points
 are located in `src/pipeline/`.
 
-- `MapStage.build()` prepares `MapArtifacts` (occupancy grid, start, goal).
-  Custom map sources should implement a small helper that returns the same
-  dataclass to remain compatible.
+- `MapStage.build()` prepares `MapArtifacts` (occupancy grid, start, goal,
+  workspace bounds and optional rectangular obstacles). Custom map sources should
+  implement a small helper that returns the same dataclass to remain compatible.
 - `PlanningStage.plan()` is where new planners can be inserted. Wrap your
   implementation inside a class that consumes `MapArtifacts` and returns a
   `PlanResult`.
@@ -31,6 +31,15 @@ are located in `src/pipeline/`.
   controller, implement the same method signature and update the orchestrator to
   inject it. The `TrackingResult` dataclass is intentionally small so it can be
   extended without breaking callers.
+
+## Coding Conventions
+
+- Use dataclasses to express configuration or artefacts exchanged between
+  modules. They provide structure and make unit tests deterministic.
+- Stick to explicit imports within packages (e.g. `from ..logging_setup`) to
+  avoid circular dependencies.
+- Prefer pure functions for geometry/math utilities; keep side effects in the
+  pipeline stages where logging and error handling are centralised.
 
 ## Numerical Stability Tips
 
@@ -51,6 +60,16 @@ are located in `src/pipeline/`.
   states) rather than image-based snapshots. The `FrameRecorder` and
   `assemble_gif` helpers automatically persist assets into `plots/` for manual
   inspection.
+
+## Observability & Debugging
+
+- Call `configure_logging(level)` during experiments to surface stage-level
+  progress information. The pipeline emits timing metrics per stage and MPC
+  progress snapshots at INFO level.
+- Enable DEBUG logging when investigating map generation or planning; modules
+  emit granular detail such as obstacle placement and per-iteration costs.
+- The CLI mirrors the logging output, so you can redirect to files for
+  long-running batches (`python -m src.cli run > run.log`).
 
 ## Documentation Practices
 

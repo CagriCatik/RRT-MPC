@@ -85,10 +85,18 @@ class TrajectoryTracker:
         u_prev = np.zeros(2)
 
         ref_global = build_reference(path, self.mpc.v_px_s, horizon, self.mpc.dt)
+        LOG.info(
+            "Starting MPC tracking (sim_steps=%d, horizon=%d, reference_points=%d)",
+            self.mpc.sim_steps,
+            horizon,
+            len(ref_global),
+        )
         states: list[FloatArray] = []
         recorder = FrameRecorder(self.viz.record_dir) if (visualize and self.viz.record_frames) else None
 
         path_idx = 0
+        goal_reached = False
+        progress_interval = max(1, self.mpc.sim_steps // 10)
         for step in range(self.mpc.sim_steps):
             end = min(path_idx + horizon + 1, len(ref_global))
             ref_window = ref_global[path_idx:end]
@@ -120,6 +128,16 @@ class TrajectoryTracker:
             states.append(state.copy())
             u_prev = u0.copy()
 
+            if (step + 1) % progress_interval == 0 or step == 0:
+                LOG.info(
+                    "Tracking progress: step=%d/%d position=(%.1f, %.1f) speed=%.2f",
+                    step + 1,
+                    self.mpc.sim_steps,
+                    state[0],
+                    state[1],
+                    state[3],
+                )
+
             if path_idx < len(ref_global) - 2:
                 dx = state[0] - ref_global[path_idx][0]
                 dy = state[1] - ref_global[path_idx][1]
@@ -128,8 +146,14 @@ class TrajectoryTracker:
 
             if np.hypot(state[0] - maps.goal[0], state[1] - maps.goal[1]) < 8.0:
                 LOG.info("Reached goal region at step %d", step)
+                goal_reached = True
                 break
 
+        LOG.info(
+            "MPC tracking finished after %d steps (goal_reached=%s)",
+            len(states),
+            goal_reached,
+        )
         return TrackingResult(states=states)
 
 

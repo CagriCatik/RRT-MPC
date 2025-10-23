@@ -6,6 +6,11 @@ from typing import Optional, Tuple
 
 import numpy as np
 
+from ..logging_setup import get_logger
+
+
+LOG = get_logger(__name__)
+
 
 @dataclass
 class BoxObstacle:
@@ -33,10 +38,25 @@ class MapGenerator:
 
     def generate(self, *, add_box: bool = True) -> np.ndarray:
         grid = self._allocate()
+        LOG.info(
+            "Generating occupancy grid (size=%.1fm×%.1fm, resolution=%.2fm)",
+            self.size_m[0],
+            self.size_m[1],
+            self.resolution,
+        )
         if add_box:
             box_size = min(self.size_m) * 0.125
             box = BoxObstacle(center=(self.size_m[0] / 2.0, self.size_m[1] / 2.0), size=(box_size, box_size))
             self._apply_box(grid, box)
+            LOG.debug(
+                "Inserted central obstacle centred at (%.1f, %.1f) with size %.1fm×%.1fm",
+                box.center[0],
+                box.center[1],
+                box.size[0],
+                box.size[1],
+            )
+        else:
+            LOG.debug("Skipping obstacle insertion for generated grid")
         return grid
 
     def _apply_box(self, grid: np.ndarray, box: BoxObstacle) -> None:

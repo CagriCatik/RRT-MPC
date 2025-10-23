@@ -32,9 +32,16 @@ class RRTStarPlanner:
         self.rng = np.random.default_rng(params.random_seed)
 
     def plan(self, start: Tuple[float, float], goal: Tuple[float, float]) -> PlanResult:
+        LOG.info(
+            "Running RRT* planner from %s to %s (max_iterations=%d)",
+            start,
+            goal,
+            self.params.max_iterations,
+        )
         nodes: List[RRTStarNode] = [RRTStarNode(start[0], start[1], 0.0, parent=None)]
         goal_index: Optional[int] = None
         iterations = 0
+        progress_interval = max(1, self.params.max_iterations // 5)
         for iterations in range(1, self.params.max_iterations + 1):
             sample = self._sample(goal)
             nearest_idx = self._nearest(nodes, sample)
@@ -50,6 +57,15 @@ class RRTStarPlanner:
             new_idx = len(nodes) - 1
             self._rewire(nodes, new_idx)
 
+            if iterations % progress_interval == 0:
+                LOG.info(
+                    "Iteration %d/%d: nodes=%d, best_cost=%.2f",
+                    iterations,
+                    self.params.max_iterations,
+                    len(nodes),
+                    nodes[new_idx].cost,
+                )
+
             if self._reached_goal(nodes[new_idx], goal):
                 goal_probe = RRTStarNode(goal[0], goal[1], 0.0, parent=None)
                 if not self._collision_free(nodes[new_idx], goal_probe):
@@ -64,9 +80,11 @@ class RRTStarPlanner:
         success = goal_index is not None
         if success and goal_index is not None:
             path = self._extract_path(nodes, goal_index)
+            LOG.info("Extracted path with %d waypoints (cost=%.2f)", len(path), nodes[goal_index].cost)
         else:
             LOG.warning("Failed to find a path within %d iterations", self.params.max_iterations)
 
+        LOG.info("Planning loop completed after %d iterations (success=%s)", iterations, success)
         return PlanResult(success=success, path=path, nodes=nodes, iterations=iterations, goal_index=goal_index)
 
     def _sample(self, goal: Tuple[float, float]) -> RRTStarNode:

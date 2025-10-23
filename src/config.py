@@ -9,6 +9,7 @@ from typing import Any, Dict, Tuple, Type, TYPE_CHECKING
 import numpy as np
 
 from .logging_setup import get_logger
+from .planning.rrt import RRTParameters
 from .planning.rrt_star import PlannerParameters
 
 if TYPE_CHECKING:  # pragma: no cover - imported only for type checking
@@ -29,16 +30,29 @@ class MapConfig:
     size_m: Tuple[float, float] = (80.0, 80.0)
     generator_resolution: float = 1.0
     generator_seed: int = 4
+    rect_obstacles: Tuple[Tuple[float, float, float, float], ...] = ()
+    rect_inflation_radius: float = 0.0
 
 
 @dataclass
 class PlannerConfig:
+    algorithm: str = "rrt_star"
     step_size: float = 5.0
     goal_radius: float = 10.0
     max_iterations: int = 2000
     rewire_radius: float = 15.0
     goal_sample_rate: float = 0.1
     random_seed: int = 13
+    rrt_step: float = 3.0
+    rrt_goal_sample_rate: float = 0.07
+    rrt_max_iterations: int = 15_000
+    rrt_goal_tolerance: float = 4.0
+    rrt_collision_step: float = 0.75
+    rrt_rng_seed: int = 7
+    rrt_prune_path: bool = True
+    rrt_spline_samples: int = 20
+    rrt_spline_alpha: float = 0.5
+    rrt_dedupe_tolerance: float = 1e-9
 
     def to_parameters(self) -> PlannerParameters:
         return PlannerParameters(
@@ -48,6 +62,20 @@ class PlannerConfig:
             rewire_radius=self.rewire_radius,
             goal_sample_rate=self.goal_sample_rate,
             random_seed=self.random_seed,
+        )
+
+    def to_rrt_parameters(self) -> RRTParameters:
+        return RRTParameters(
+            step=self.rrt_step,
+            goal_sample_rate=self.rrt_goal_sample_rate,
+            max_iterations=self.rrt_max_iterations,
+            goal_tolerance=self.rrt_goal_tolerance,
+            collision_step=self.rrt_collision_step,
+            rng_seed=self.rrt_rng_seed,
+            prune_path=self.rrt_prune_path,
+            spline_samples=self.rrt_spline_samples,
+            spline_alpha=self.rrt_spline_alpha,
+            dedupe_tolerance=self.rrt_dedupe_tolerance,
         )
 
 
