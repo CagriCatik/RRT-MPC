@@ -24,18 +24,26 @@ def _get_pyplot():
 
 @dataclass
 class VehicleParams:
-    wheelbase: float = 2.9
-    width: float = 2.0
-    length: float = 4.5
-    tire_radius: float = 0.4
-    tire_width: float = 0.3
-    wheel_track: float = 1.8
-    rear_overhang: float = 1.0
-    front_overhang: float = 1.0
+    """Geometric parameters for the planar vehicle drawing."""
+
+    length: float = 0.4
+    width: float = 0.2
+    back_to_wheel: float = 0.1
+    wheel_length: float = 0.03
+    wheel_width: float = 0.02
+    tread: float = 0.07
+
+    @property
+    def wheelbase(self) -> float:
+        """Distance between the front and rear axle centres."""
+
+        return self.length - self.back_to_wheel
 
 
 def _rot(theta: float) -> np.ndarray:
-    return np.array([[math.cos(theta), -math.sin(theta)], [math.sin(theta), math.cos(theta)]])
+    c = math.cos(theta)
+    s = math.sin(theta)
+    return np.array([[c, -s], [s, c]])
 
 
 def draw_vehicle(
@@ -48,65 +56,80 @@ def draw_vehicle(
     color: str = "black",
     ax: Optional[Axes] = None,
 ) -> List[Line2D]:
-    """Draw a planar vehicle footprint using the provided ``params``.
-
-    Parameters
-    ----------
-    x, y, yaw, steer:
-        State of the vehicle in map coordinates.
-    params:
-        Geometric vehicle parameters used to generate the footprint.
-    color:
-        Matplotlib-compatible colour for the outline.
-    ax:
-        Optional axes object to draw onto. When omitted, the current axes
-        obtained from :mod:`matplotlib.pyplot` are used.
-
-    Returns
-    -------
-    list[Line2D]
-        Handles to the plotted line artists so callers can update or remove
-        them later when animating.
-    """
+    """Draw a planar vehicle footprint using :mod:`matplotlib` primitives."""
 
     plt = _get_pyplot()
     axes = ax if ax is not None else plt.gca()
 
-    car = np.array(
+    outline = np.array(
         [
-            [-params.rear_overhang, -params.rear_overhang, params.front_overhang, params.front_overhang, -params.rear_overhang],
-            [params.width / 2, -params.width / 2, -params.width / 2, params.width / 2, params.width / 2],
+            [
+                -params.back_to_wheel,
+                params.length - params.back_to_wheel,
+                params.length - params.back_to_wheel,
+                -params.back_to_wheel,
+                -params.back_to_wheel,
+            ],
+            [
+                params.width / 2,
+                params.width / 2,
+                -params.width / 2,
+                -params.width / 2,
+                params.width / 2,
+            ],
         ]
     )
 
-    wheel = np.array(
+    fr_wheel = np.array(
         [
-            [-params.tire_radius, -params.tire_radius, params.tire_radius, params.tire_radius, -params.tire_radius],
-            [params.tire_width / 4, -params.tire_width / 4, -params.tire_width / 4, params.tire_width / 4, params.tire_width / 4],
+            [
+                params.wheel_length,
+                -params.wheel_length,
+                -params.wheel_length,
+                params.wheel_length,
+                params.wheel_length,
+            ],
+            [
+                -params.wheel_width - params.tread,
+                -params.wheel_width - params.tread,
+                params.wheel_width - params.tread,
+                params.wheel_width - params.tread,
+                -params.wheel_width - params.tread,
+            ],
         ]
     )
 
-    rl, rr, fr, fl = wheel.copy(), wheel.copy(), wheel.copy(), wheel.copy()
-    rot_vehicle = _rot(yaw)
+    rr_wheel = fr_wheel.copy()
+    fl_wheel = fr_wheel.copy()
+    rl_wheel = rr_wheel.copy()
+
+    fl_wheel[1, :] *= -1
+    rl_wheel[1, :] *= -1
+
+    rot_body = _rot(yaw)
     rot_steer = _rot(steer)
 
-    fr = rot_steer @ fr + np.array([[params.wheelbase], [-params.wheel_track / 2]])
-    fl = rot_steer @ fl + np.array([[params.wheelbase], [params.wheel_track / 2]])
-    rr[1, :] -= params.wheel_track / 2
-    rl[1, :] += params.wheel_track / 2
+    fr_wheel = rot_steer @ fr_wheel
+    fl_wheel = rot_steer @ fl_wheel
 
-    fr = rot_vehicle @ fr
-    fl = rot_vehicle @ fl
-    rr = rot_vehicle @ rr
-    rl = rot_vehicle @ rl
-    car = rot_vehicle @ car
+    fr_wheel[0, :] += params.wheelbase
+    fl_wheel[0, :] += params.wheelbase
+
+    fr_wheel = rot_body @ fr_wheel
+    fl_wheel = rot_body @ fl_wheel
+    rr_wheel = rot_body @ rr_wheel
+    rl_wheel = rot_body @ rl_wheel
+    outline = rot_body @ outline
 
     offset = np.array([[x], [y]])
     artists: List[Line2D] = []
-    for poly in (car, fr, fl, rr, rl):
-        poly += offset
+    for poly in (outline, fr_wheel, rr_wheel, fl_wheel, rl_wheel):
+        poly = poly + offset
         (line,) = axes.plot(poly[0, :], poly[1, :], color)
         artists.append(line)
+
+    (center,) = axes.plot([x], [y], "*", color=color)
+    artists.append(center)
 
     artists.extend(draw_arrow(x, y, yaw, params.wheelbase * 0.6, color, ax=axes))
     return artists
