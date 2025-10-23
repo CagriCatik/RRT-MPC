@@ -26,7 +26,9 @@ same map and configuration.
    consistent path extraction.
 
 The output `PlanResult` contains the ordered path (including start and goal),
-all nodes with parent indices and metadata such as iteration count.
+all nodes with parent indices and metadata such as iteration count. Additional
+fields expose the raw, pruned and smoothed paths used by alternative planners,
+but are empty for pure RRT* runs.
 
 ## Collision Checking
 

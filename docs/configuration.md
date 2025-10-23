@@ -26,6 +26,8 @@ map:
   size_m: [80.0, 80.0]
   generator_resolution: 1.0
   generator_seed: 4
+  rect_obstacles: []
+  rect_inflation_radius: 0.0
 ```
 
 - `start`: pixel coordinates in image space (origin bottom-left after flip).
@@ -35,6 +37,11 @@ map:
 - `size_m` / `generator_resolution`: control the procedural generator. Use a
   finer resolution when you need tighter obstacle placement; remember to update
   `map_resolution` so the MPC scaling remains valid.
+- `rect_obstacles`: optional list of `[xmin, ymin, xmax, ymax]` rectangles for
+  continuous-space planners. Leave empty when relying solely on occupancy
+  grids.
+- `rect_inflation_radius`: Minkowski inflation (in map units) applied to each
+  rectangle before planning.
 
 When `generate: true`, the generator persists the base map to disk. Subsequent
 runs reuse the cached image unless `generate` stays true.
@@ -43,16 +50,29 @@ runs reuse the cached image unless `generate` stays true.
 
 ```yaml
 planner:
+  algorithm: rrt_star  # or "rrt"
   step_size: 10.0
   goal_radius: 15.0
   max_iterations: 3000
   rewire_radius: 25.0
   goal_sample_rate: 0.1
   random_seed: 13
+  rrt_step: 3.0
+  rrt_goal_sample_rate: 0.07
+  rrt_max_iterations: 15000
+  rrt_goal_tolerance: 4.0
+  rrt_collision_step: 0.75
+  rrt_rng_seed: 7
+  rrt_prune_path: true
+  rrt_spline_samples: 20
+  rrt_spline_alpha: 0.5
+  rrt_dedupe_tolerance: 1.0e-9
 ```
 
-These fields map directly to `PlannerParameters`. The random seed guarantees
-reproducible planning.
+`algorithm` selects the planner implementation. When set to `rrt_star`, the
+remaining fields map directly to `PlannerParameters`. When set to `rrt`, the
+`rrt_*` fields configure the rectangular-world planner and its smoothing
+behaviour. Both planners honour deterministic seeds for reproducible runs.
 
 Runtime overrides can be applied without editing YAML by constructing
 `PipelineConfig.from_dict({...})` and merging dictionaries. This is useful when

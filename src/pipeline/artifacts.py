@@ -8,6 +8,7 @@ import numpy as np
 
 from ..common.types import FloatArray
 from ..planning.plan_result import PlanResult
+from ..planning.rrt import Rect
 
 
 @dataclass(frozen=True)
@@ -17,6 +18,8 @@ class MapArtifacts:
     occupancy: np.ndarray
     start: Tuple[float, float]
     goal: Tuple[float, float]
+    workspace: Tuple[Tuple[float, float], Tuple[float, float]] = ((0.0, 0.0), (0.0, 0.0))
+    rect_obstacles: Tuple[Rect, ...] = ()
 
 
 @dataclass(frozen=True)

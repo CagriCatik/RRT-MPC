@@ -12,7 +12,7 @@ flowchart LR
     orch --> planStage[PlanningStage\npipeline.planning_stage]
     orch --> trackStage[TrajectoryTracker\npipeline.control_stage]
     mapStage --> maps[maps.*]
-    planStage --> planning[planning.rrt_star]
+    planStage --> planning[planning.rrt*]
     trackStage --> control[control.*]
     trackStage --> viz[viz.visualization]
     planning --> common[common.geometry]
@@ -25,9 +25,11 @@ flowchart LR
 ### `pipeline`
 
 - **map_stage.py** – encapsulates map generation, inflation and start/goal
-  derivation, returning immutable `MapArtifacts`.
-- **planning_stage.py** – wraps `RRTStarPlanner` execution and records the full
-  `PlanResult` alongside metadata.
+  derivation, returning immutable `MapArtifacts` that also capture workspace
+  bounds and optional rectangular obstacles for sampling-based planners.
+- **planning_stage.py** – wraps planner selection (`RRTStarPlanner` for grids or
+  `RRTPlanner` for rectangular worlds) and records the full `PlanResult`
+  alongside metadata.
 - **control_stage.py** – performs MPC roll-outs with a structured recovery
   strategy and optional visualisation hooks, yielding `TrackingResult`.
 - **orchestrator.py** – coordinates the stages, manages Matplotlib lifecycle and
@@ -50,6 +52,9 @@ flowchart LR
 - **rrt_star.py** – deterministic RRT* with parent-indexed nodes (`PlanResult`).
   Accepts a `PlannerParameters` dataclass to ensure reproducible seeds and
   tunable metrics.
+- **rrt.py** – probabilistic RRT for rectangular obstacle worlds with optional
+  Catmull-Rom smoothing and shortcut pruning utilities. Exposes `RRTParameters`
+  for reproducible tuning.
 - **plan_result.py** – data structures for returning the final path, node list
   and metadata (iterations, goal index).
 
@@ -87,8 +92,10 @@ flowchart LR
    all parameters.
 2. **Map Preparation** uses `MapStage` to optionally generate a synthetic map,
    inflate obstacles and construct a binary occupancy grid.
-3. **Planning** runs inside `PlanningStage`, calling `RRTStarPlanner.plan` and
-   returning a `PlanResult` containing the path and exploration tree.
+3. **Planning** runs inside `PlanningStage`, selecting between `RRTStarPlanner`
+   or the rectangular `RRTPlanner` based on configuration and returning a
+   `PlanResult` containing the path (raw, pruned and optionally smoothed) and
+   exploration tree.
 4. **Reference Building & Control** happens inside `TrajectoryTracker`, which
    converts the geometric path into an MPC reference, solves the QP with
    recovery logic, and integrates the vehicle model forward in time.
@@ -103,7 +110,7 @@ stage, and provides a clear seam for future planners or controllers.
 
 | Stage             | Input artefacts                  | Output artefacts                 | Failure handling                                 |
 |-------------------|----------------------------------|----------------------------------|--------------------------------------------------|
-| `MapStage.build`  | `MapConfig`                      | `MapArtifacts` (occupancy/start/goal) | Regenerates deterministic maps; raises when IO fails. |
+| `MapStage.build`  | `MapConfig`                      | `MapArtifacts` (occupancy/start/goal/workspace/rectangles) | Regenerates deterministic maps; raises when IO fails. |
 | `PlanningStage.plan` | `MapArtifacts`                | `PlanningArtifacts` with `PlanResult` | Returns `success=False`; downstream control aborts early. |
 | `TrajectoryTracker.track` | `PlanningArtifacts`, `MapArtifacts` | `TrackingResult` (state history) | Graceful fallback via MPC relaxation or early termination. |
 

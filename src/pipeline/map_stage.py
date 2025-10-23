@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Tuple
+
 import numpy as np
 
 from ..config import MapConfig
@@ -10,6 +12,7 @@ from ..logging_setup import get_logger
 from ..maps.generator import MapGenerator
 from ..maps.inflate import inflate_grayscale_map, to_occupancy_grid
 from ..maps.io import load_grayscale, save_grayscale
+from ..planning.rrt import Rect, inflate_obstacles
 from .artifacts import MapArtifacts
 
 LOG = get_logger(__name__)
@@ -63,11 +66,18 @@ class MapStage:
         inflated = self.inflate(raw)
         occupancy = to_occupancy_grid(inflated)
         occupancy = np.flipud(occupancy)
+        workspace = ((0.0, float(occupancy.shape[1])), (0.0, float(occupancy.shape[0])))
         start = self.config.start
         goal = (
             occupancy.shape[1] - self.config.goal_offset[0],
             occupancy.shape[0] - self.config.goal_offset[1],
         )
+        rects: Tuple[Rect, ...] = ()
+        if self.config.rect_obstacles:
+            base_rects = tuple(Rect(*coords) for coords in self.config.rect_obstacles)
+            radius = self.config.rect_inflation_radius
+            inflated_rects = inflate_obstacles(base_rects, radius, workspace[0], workspace[1])
+            rects = tuple(inflated_rects)
         LOG.info(
             "Map stage ready: occupancy=%sx%s start=%s goal=%s",
             occupancy.shape[1],
@@ -75,7 +85,13 @@ class MapStage:
             start,
             goal,
         )
-        return MapArtifacts(occupancy=occupancy, start=start, goal=goal)
+        return MapArtifacts(
+            occupancy=occupancy,
+            start=start,
+            goal=goal,
+            workspace=workspace,
+            rect_obstacles=rects,
+        )
 
 
 __all__ = ["MapStage"]

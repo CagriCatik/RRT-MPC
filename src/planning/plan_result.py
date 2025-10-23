@@ -1,8 +1,8 @@
 """Structured results for deterministic RRT* planning."""
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from dataclasses import dataclass, field
+from typing import List, Optional, Sequence, Tuple
 
 
 @dataclass
@@ -24,6 +24,9 @@ class PlanResult:
     nodes: List[RRTStarNode]
     iterations: int
     goal_index: Optional[int]
+    raw_path: Sequence[Tuple[float, float]] = field(default_factory=list)
+    pruned_path: Optional[Sequence[Tuple[float, float]]] = None
+    smoothed_path: Optional[Sequence[Tuple[float, float]]] = None
 
 
 __all__ = ["PlanResult", "RRTStarNode"]

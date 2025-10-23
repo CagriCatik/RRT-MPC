@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from ..config import PlannerConfig
 from ..logging_setup import get_logger
+from ..planning.rrt import RRTPlanner
 from ..planning.rrt_star import RRTStarPlanner
 from .artifacts import MapArtifacts, PlanningArtifacts
 
@@ -18,15 +19,27 @@ class PlanningStage:
     config: PlannerConfig
 
     def plan(self, maps: MapArtifacts) -> PlanningArtifacts:
-        params = self.config.to_parameters()
-        LOG.info(
-            "Starting planning stage (max_iterations=%d, step=%.1f, goal_radius=%.1f)",
-            params.max_iterations,
-            params.step,
-            params.goal_radius,
-        )
-        planner = RRTStarPlanner(maps.occupancy, params)
-        result = planner.plan(maps.start, maps.goal)
+        algorithm = self.config.algorithm.lower()
+        if algorithm == "rrt":
+            params = self.config.to_rrt_parameters()
+            LOG.info(
+                "Starting RRT planner (max_iterations=%d, step=%.1f, goal_tol=%.1f)",
+                params.max_iterations,
+                params.step,
+                params.goal_tolerance,
+            )
+            planner = RRTPlanner(obstacles=maps.rect_obstacles, workspace=maps.workspace, params=params)
+            result = planner.plan(maps.start, maps.goal)
+        else:
+            params = self.config.to_parameters()
+            LOG.info(
+                "Starting RRT* planner (max_iterations=%d, step=%.1f, goal_radius=%.1f)",
+                params.max_iterations,
+                params.step,
+                params.goal_radius,
+            )
+            planner = RRTStarPlanner(maps.occupancy, params)
+            result = planner.plan(maps.start, maps.goal)
         LOG.info(
             "Planning finished: success=%s iterations=%d nodes=%d",
             result.success,
