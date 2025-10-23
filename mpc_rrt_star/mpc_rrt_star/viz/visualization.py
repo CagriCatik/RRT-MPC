@@ -2,15 +2,36 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterable, Optional, Sequence
+from typing import Optional, Sequence
 
 import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib import rcsetup
 import numpy as np
 
 from ..common.types import FloatArray, Path
-from ..planning.plan_result import PlanResult, RRTStarNode
+from ..logging_setup import get_logger
+from ..planning.plan_result import PlanResult
 from .vehicle_draw import VehicleParams, draw_vehicle
+
+LOG = get_logger(__name__)
+
+_INTERACTIVE_BACKENDS = {name.lower() for name in rcsetup.interactive_bk}
+
+
+def _backend_supports_interaction() -> bool:
+    backend = matplotlib.get_backend().lower()
+    if backend.startswith("module://"):
+        # Only ipympl provides interactive support among module backends.
+        return backend.startswith("module://ipympl")
+    return backend in _INTERACTIVE_BACKENDS
+
+
+def _warn_once(message: str) -> None:
+    if getattr(_warn_once, "_emitted", False):
+        return
+    LOG.info(message)
+    _warn_once._emitted = True
 
 
 def configure_backend(backend: str) -> None:
@@ -46,7 +67,14 @@ def plot_rrt_star(
     plt.title("RRT* Path Planning")
     if save_path is not None:
         plt.savefig(save_path, bbox_inches="tight", dpi=200)
-    plt.show()
+    if _backend_supports_interaction():
+        plt.show()
+    else:
+        _warn_once(
+            "Matplotlib backend '%s' is non-interactive; skipping on-screen display."
+            % matplotlib.get_backend()
+        )
+        plt.close()
 
 
 def plot_prediction(
@@ -69,7 +97,8 @@ def plot_prediction(
     plt.ylim(0, occupancy.shape[0])
     plt.title(f"MPC Step {step_idx}")
     plt.legend(loc="upper right")
-    plt.pause(pause_s)
+    if _backend_supports_interaction():
+        plt.pause(pause_s)
 
 
 def animate_vehicle_states(
@@ -87,5 +116,9 @@ def animate_vehicle_states(
         draw_vehicle(state[0], state[1], state[2], 0.0, params, color=color)
         plt.xlim(0, occupancy.shape[1])
         plt.ylim(0, occupancy.shape[0])
-        plt.pause(delay)
-    plt.show()
+        if _backend_supports_interaction():
+            plt.pause(delay)
+    if _backend_supports_interaction():
+        plt.show()
+    else:
+        plt.close()
