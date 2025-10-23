@@ -77,18 +77,30 @@ def _prepare_axis(ax: Optional[Axes]) -> tuple[Figure, Axes, bool]:
 
 
 def _update_legend(ax: Axes, *, extra_handles: Sequence[object] = ()) -> None:
-    handles, labels = ax.get_legend_handles_labels()
+    stored: Dict[str, object] = dict(getattr(ax, "_rrt_extra_legend", {}))  # type: ignore[attr-defined]
     for handle in extra_handles:
         label = getattr(handle, "get_label", lambda: "")()
-        handles.append(handle)
-        labels.append(label)
+        if not label or label.startswith("_"):
+            continue
+        stored[label] = handle
+
+    handles, labels = ax.get_legend_handles_labels()
     unique: Dict[str, object] = {}
     for handle, label in zip(handles, labels):
         if not label or label.startswith("_"):
             continue
         unique[label] = handle
+
+    for label, handle in stored.items():
+        unique[label] = handle
+
     if unique:
         ax.legend(list(unique.values()), list(unique.keys()), loc="lower right")
+
+    if stored:
+        ax._rrt_extra_legend = stored  # type: ignore[attr-defined]
+    elif hasattr(ax, "_rrt_extra_legend"):
+        delattr(ax, "_rrt_extra_legend")
 
 
 def plot_rrt_star(
@@ -116,15 +128,16 @@ def plot_rrt_star(
             np.ma.masked_where(highlight == 0, highlight),
             cmap=cmap,
             origin="lower",
-            alpha=0.6,
+            alpha=0.75,
             interpolation="nearest",
+            zorder=3,
         )
         inflated_image.set_label("Inflated Obstacle")
         legend_handles.append(
             Patch(
                 facecolor="#ff7f0e",
                 edgecolor="none",
-                alpha=0.6,
+                alpha=0.75,
                 label="Inflated Obstacle",
             )
         )
