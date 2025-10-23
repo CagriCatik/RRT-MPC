@@ -93,11 +93,16 @@ mpc:
   v_px_s: 28.0
   sim_steps: 600
 viz:
-  backend: Agg
+  backend: auto
   prediction_pause: 0.05
   animate_tree: true
   record_frames: false
 ```
+
+The `viz.backend` option defaults to `auto`, which attempts to select an interactive
+Matplotlib backend when one is available and falls back to a headless backend otherwise.
+Set it explicitly to `Agg` to force headless rendering or to a GUI backend such as
+`TkAgg` if you want to override the auto-detected choice.
 
 See [`docs/configuration.md`](docs/configuration.md) for a complete reference.
 

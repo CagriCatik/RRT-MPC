@@ -4,8 +4,13 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-import matplotlib.pyplot as plt
 import numpy as np
+
+
+def _get_pyplot():
+    import matplotlib.pyplot as plt
+
+    return plt
 
 
 @dataclass
@@ -26,6 +31,8 @@ def _rot(theta: float) -> np.ndarray:
 
 def draw_vehicle(x: float, y: float, yaw: float, steer: float, params: VehicleParams, *, color: str = "black") -> None:
     """Draw a planar vehicle footprint using the provided ``params``."""
+
+    plt = _get_pyplot()
 
     car = np.array(
         [
@@ -65,6 +72,8 @@ def draw_vehicle(x: float, y: float, yaw: float, steer: float, params: VehiclePa
 
 
 def draw_arrow(x: float, y: float, theta: float, length: float, color: str) -> None:
+    plt = _get_pyplot()
+
     angle = math.radians(30)
     dx = length * math.cos(theta)
     dy = length * math.sin(theta)

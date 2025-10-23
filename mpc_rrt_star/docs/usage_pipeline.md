@@ -43,8 +43,10 @@ print(plan_result.success, len(states))
 The returned `states` sequence contains the simulated vehicle trajectory in
 pixel coordinates.
 
-## Headless Rendering
+## Rendering Backends
 
-Set `viz.backend: "Agg"` in the configuration or call
-`configure_backend("Agg")` before plotting. Enable frame recording with
-`viz.record_frames: true` to store prediction snapshots under `viz.record_dir`.
+By default the pipeline uses the `auto` backend selection, which tries to enable
+interactive plots when a GUI backend is available. On remote or headless systems set
+`viz.backend: "Agg"` in the configuration (or call `configure_backend("Agg")`) to
+force non-interactive rendering. Enable frame recording with `viz.record_frames: true`
+to store prediction snapshots under `viz.record_dir`.

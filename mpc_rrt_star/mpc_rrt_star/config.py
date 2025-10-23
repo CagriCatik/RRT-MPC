@@ -80,7 +80,7 @@ class MPCConfig:
 
 @dataclass
 class VizConfig:
-    backend: str = "Agg"
+    backend: str = "auto"
     prediction_pause: float = 0.05
     animate_tree: bool = True
     record_frames: bool = False

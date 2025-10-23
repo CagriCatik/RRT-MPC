@@ -63,14 +63,14 @@ settings are passed to the MPC controller unchanged.
 
 ```yaml
 viz:
-  backend: Agg
+  backend: auto
   prediction_pause: 0.05
   animate_tree: true
   record_frames: false
   record_dir: frames
 ```
 
-- `backend`: forwarded to `matplotlib.use` for headless execution.
+- `backend`: choose the Matplotlib backend. The default `auto` mode tries to pick a GUI backend and falls back to headless when necessary.
 - `record_frames`: enables PNG frame capture of MPC predictions.
 
 ## Example Configuration File
@@ -84,7 +84,7 @@ planner:
 mpc:
   horizon: 16
 viz:
-  backend: Agg
+  backend: auto
 ```
 
 Unspecified fields fall back to defaults defined in `config.py`.
