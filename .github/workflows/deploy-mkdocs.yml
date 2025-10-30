@@ -41,4 +41,4 @@ jobs:
           git config user.email github-actions@github.com
           mkdocs gh-deploy --force --remote-name origin --remote-branch gh-pages
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.MKDOCS_DEPLOY_TOKEN }}
