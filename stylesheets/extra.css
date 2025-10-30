@@ -1,0 +1,15 @@
+/* Custom MkDocs Material overrides */
+:root {
+  --md-primary-fg-color: #1a73e8;
+  --md-accent-fg-color: #ff9800;
+}
+
+/* MathJax and Mermaid rendering adjustments */
+.arithmatex {
+  font-size: 1em;
+}
+
+.mermaid {
+  text-align: center;
+  margin: 1.5em 0;
+}
