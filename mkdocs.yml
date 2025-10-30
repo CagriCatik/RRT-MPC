@@ -18,6 +18,7 @@ plugins:
   - autorefs
   - git-revision-date-localized:
       enable_creation_date: true
+      fallback_to_build_date: true
   - minify:
       minify_html: true
 
