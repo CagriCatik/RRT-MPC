@@ -80,8 +80,7 @@ intervals, making notebook execution as observable as the CLI.
 Set `viz.backend: "Agg"` in the configuration or call
 `configure_backend("Agg")` before plotting. Enable frame recording with
 `viz.record_frames: true`; the PNG frames are saved in `plots/<viz.record_dir>/`
-and can be converted into GIFs via the CLI or
-[`examples/generate_simulation_gif.py`](./examples/generate_simulation_gif.py).
+and can be converted into GIFs via the CLI or `examples/generate_simulation_gif.py`
 
 ## Troubleshooting
 
